@@ -1,0 +1,9 @@
+{
+  "name": "nexe",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "dev": "vercel dev", "check": "node --check api/banco-nominas.js" },
+  "dependencies": { "@supabase/supabase-js": "^2.112.3" },
+  "devDependencies": { "@vercel/node": "^5.5.0", "vercel": "^48.6.0" }
+}

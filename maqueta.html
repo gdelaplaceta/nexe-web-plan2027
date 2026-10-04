@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexe · Acceso a convocatorias</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F0;--card:#fff;--ink:#14312D;--mut:#5F716D;--line:#D9DFDA;--coin:#F0B429;--coinink:#4A3500;--red:#C23B2E;--ok:#2F7D5B;--blue:#2B5E8C;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="dark"]{--bg:#0F1B19;--card:#172624;--ink:#E6EEEB;--mut:#93A8A3;--line:#29403C;--red:#E5675A;--ok:#5CC297;--blue:#7DB1E0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1B19;--card:#172624;--ink:#E6EEEB;--mut:#93A8A3;--line:#29403C;--red:#E5675A;--ok:#5CC297;--blue:#7DB1E0}}
+[hidden]{display:none!important}*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:#14312D;color:#E6EEEB;padding:14px clamp(14px,4vw,40px);display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+header h1{margin:0;font-size:22px;font-weight:800;line-height:1}header small{display:block;font-weight:400;font-size:12px;opacity:.75;margin-top:4px}
+#nav{display:flex;gap:4px}#nav button{background:none;border:0;color:inherit;padding:8px 14px;border-radius:6px;cursor:pointer;font:inherit;font-weight:600;opacity:.8;min-height:40px}#nav button.on{background:var(--coin);color:var(--coinink);opacity:1}
+main{max-width:860px;margin:0 auto;padding:18px clamp(14px,4vw,24px) 40px}
+input,button,textarea{font:inherit;color:inherit}
+input[type=text],textarea{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;font-size:16px}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:9px 16px;cursor:pointer;font-weight:600;min-height:42px}.btn.ok{background:var(--ok);color:#fff}.btn.sec{background:none;color:var(--ink);border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:19px}h3{margin:14px 0 6px;font-size:15px}.meta{font-size:13px;color:var(--mut)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.chip{font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px;border:1px solid currentColor}
+.c-ok{color:var(--ok)}.c-bad{color:var(--red)}.c-wait{color:#B07A00}.c-mut{color:var(--mut)}.c-blue{color:var(--blue)}
+:root[data-theme="dark"] .c-wait{color:var(--coin)}
+.plazas{display:inline-block;background:var(--coin);color:var(--coinink);font-weight:800;border-radius:99px;padding:2px 12px}
+ul.req{margin:6px 0;padding-left:20px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.q{padding:14px 0;border-top:1px solid var(--line);user-select:none;-webkit-user-select:none}.q p{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:10px;align-items:center;padding:8px 6px;cursor:pointer;min-height:42px}.q label input{width:20px;height:20px;flex:none}
+.warn{background:rgba(194,59,46,.1);border:1px solid var(--red);border-radius:8px;padding:12px;margin:10px 0}
+.empty{padding:28px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:10px}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#toast.on{opacity:1}
+.legal{max-width:860px;margin:0 auto;padding:0 24px 32px;color:var(--mut);font-size:12px}.legal summary{cursor:pointer;color:var(--ink);font-weight:600}.legal p{max-width:78ch}
+.task-comments{margin-top:8px}.task-comments summary{font-size:12px;color:var(--mut);cursor:pointer}.comment{padding:6px 0;border-top:1px solid var(--line)}.comment-box{display:flex;gap:6px;margin-top:8px}.comment-box input{min-height:34px;font-size:14px}.comment-box .btn{min-height:34px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}.tw{overflow-x:auto}
+.f{display:grid;gap:8px;margin-bottom:10px}.f label{font-size:13px;color:var(--mut)}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+select{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px;width:100%;font-size:16px}input[type=number],input[type=date]{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%;font-size:16px}
+.btn.sm{padding:5px 10px;min-height:34px;font-size:13px}.btn.bad{background:none;color:var(--red);border:1px solid var(--red)}
+a.btn{display:inline-block;text-decoration:none;line-height:24px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}.kpi b{display:block;font-size:30px;line-height:1.1}
+#lbar{background:var(--coin);color:var(--coinink);padding:8px clamp(14px,4vw,40px);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}#lbar input,#lbar select{width:auto;min-height:34px;padding:4px 8px;font-size:14px}#lbar .btn{min-height:34px;padding:4px 12px}
+pre.p{white-space:pre-wrap;font-size:12px;background:var(--bg);padding:8px;border-radius:6px}
+main.wide{max-width:1200px;padding:0}
+#gestor{--side:#14312D;--sideink:#E6EEEB;
+
+
+
+
+[hidden]{display:none!important}
+#gate{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 28px}
+#gate>div{max-width:720px;margin:0 auto}#gate h1{font-size:22px;margin:8px 0}
+pre.doc{white-space:pre-wrap;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;font:14px/1.55 inherit;overflow-wrap:anywhere;margin:10px 0}
+#gate label{display:flex;gap:10px;align-items:flex-start;margin:12px 0;cursor:pointer}#gate label input{width:22px;height:22px;flex:none;margin:0}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+*{box-sizing:border-box}
+&{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+aside{background:var(--side);color:var(--sideink);padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+aside h1{font-size:19px;font-weight:800;margin:0;line-height:1.1}
+aside h1 small{display:block;font-weight:400;font-size:12px;opacity:.7;margin-top:4px}
+.node{display:block;width:100%;text-align:left;background:none;border:0;color:inherit;padding:6px 8px;border-radius:6px;font:inherit;cursor:pointer}
+.node:hover{background:rgba(255,255,255,.08)}.node.on{background:var(--coin);color:var(--coinink);font-weight:600}
+.org{font-weight:600;margin-top:8px}.proj{padding-left:22px;font-size:14px;opacity:.92}
+.adm{border-top:1px solid rgba(255,255,255,.2);padding-top:12px;display:grid;gap:6px}
+.adm b{font-size:12px;font-weight:600;opacity:.8}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+aside input,aside select{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:var(--sideink)}
+aside option{color:#111}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn.sec{background:none;color:var(--ink);border:1px solid var(--line)}.btn.ok{background:var(--ok);color:#fff}.btn.bad{background:none;color:var(--red);border:1px solid var(--red)}
+aside #mode{background:rgba(255,255,255,.1);color:var(--sideink);border:1px solid rgba(255,255,255,.25);width:100%;margin-top:auto}
+aside .btn{background:var(--coin);color:var(--coinink)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+main{padding:12px clamp(14px,3vw,36px) 22px;min-width:0;max-width:980px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex:1;overflow-x:auto}
+.tab{background:none;border:0;padding:9px 14px;cursor:pointer;color:var(--mut);font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+.tab.on{color:var(--ink);border-color:var(--coin)}
+.who{font-size:13px;color:var(--mut)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.row>*{flex:1 1 140px}.row>.btn{flex:0 0 auto}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.coin{width:54px;height:54px;border-radius:50%;background:var(--coin);color:var(--coinink);display:grid;place-content:center;text-align:center;font-weight:800;font-size:18px;line-height:1;box-shadow:inset 0 0 0 3px rgba(255,255,255,.45)}
+.coin small{font-size:9px;font-weight:600;display:block;margin-top:2px}
+.task h3{margin:0;font-size:16px}.meta{font-size:13px;color:var(--mut)}
+.st{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid currentColor;margin-right:6px}
+.st.todo{color:var(--mut)}.st.doing{color:var(--blue)}.st.review{color:#B07A00}.st.approved,.st.resolved{color:var(--ok)}.st.open{color:var(--red)}
+
+.act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer}.kpi .big{font-size:34px;line-height:1.1}h2{font-size:16px;margin:0 0 10px}
+.empty{padding:28px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:10px}
+.big{font-size:38px;font-weight:800}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}td:last-child,th:last-child{text-align:right}
+.inc p{margin:6px 0 0;white-space:pre-wrap}
+#banner{background:var(--coin);color:var(--coinink);padding:10px 16px;font-weight:600}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.menu{display:none}
+.panel{overflow-x:auto}.task h3{overflow-wrap:anywhere}.task>div{min-width:0}
+.row label input{width:20px!important;height:20px}
+.tab{min-height:40px}
+@media (min-width:761px){aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto}}
+@media (max-width:1024px) and (min-width:761px){.app{grid-template-columns:210px 1fr}}
+@media (max-width:760px){
+ .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+ aside{align-self:start}
+ aside{padding:10px 14px;gap:8px;position:sticky;top:0;z-index:5;max-height:80vh;overflow-y:auto}
+ aside h1{font-size:17px}aside h1 small{display:none}
+ .menu{display:inline-block;background:var(--coin);color:var(--coinink);border:0;border-radius:6px;padding:6px 12px;font-weight:600;min-height:38px}
+ aside:not(.open) #tree,aside:not(.open) .adm,aside:not(.open) #mode{display:none}
+ main{padding:6px 12px 24px}
+ 
+ aside{padding:6px 12px}.menu{max-width:58vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ main{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-content:start}
+ .top{display:contents}
+ .who{display:none}
+ aside #mode{margin-top:4px}
+ .tabs{grid-row:1;grid-column:1/-1;position:sticky;top:var(--hh);z-index:4;background:var(--bg);margin:0 -12px 4px;padding:0 12px;flex:none}
+ main>section{grid-row:2;grid-column:1/-1;min-width:0}
+ .task{grid-template-columns:auto 1fr;padding:12px;gap:10px}
+ .coin{width:46px;height:46px;font-size:16px}
+ .act{grid-column:1/-1;justify-content:stretch}.act .btn{flex:1 1 auto}
+ .btn{min-height:42px}
+ input,select,textarea{font-size:16px;min-height:42px}
+ .row>*,.row>.btn{flex:1 1 100%}
+ .kpis{grid-template-columns:repeat(2,1fr)}.kpi .big,.big{font-size:28px}
+ th,td{padding:8px 4px}
+}
+
+ main{margin:0}.row{border:0;padding:0}.btn{min-height:0}
+@media (prefers-color-scheme:dark){&{--side:#0A1312}}}
+@media (max-width:600px){.g2{grid-template-columns:1fr}header{padding:10px 14px}header small{display:none}header h1{font-size:19px}#nav{width:100%}#nav button{flex:1}}
+</style>
+</head>
+<body>
+<header><div><h1>Nexe<small>Convocatorias, pruebas y expedientes · Grupo de La Placeta</small></h1></div>
+<nav id="nav"><button data-v="conv" class="on">Convocatorias</button><button data-v="exp">Mi expediente</button></nav></header>
+<div id="lbar" hidden><b>Nexe</b><span>Identidad local de demostración ·</span><input type="text" id="lname" placeholder="Nombre" aria-label="Nombre"><input type="text" id="ldip" placeholder="DIP (DNI/NIE)" aria-label="DIP" maxlength="9" autocomplete="off"><button class="btn" id="lgo">Entrar / registrarme</button><button class="btn sec" id="lclr">Borrar datos</button></div>
+<template id="gtpl">
+<div id="banner" hidden>Abre esta página con sesión iniciada en claude.ai para ver y editar los datos del grupo.</div>
+<div class="app">
+<aside>
+  <div class="brand"><h1>Grupo de La Placeta<small>Panel interno · Convenio 2027</small></h1><button class="menu" id="menuBtn" aria-expanded="false" aria-controls="tree">Proyectos ▾</button></div>
+  <nav id="tree" aria-label="Organizaciones y proyectos"></nav>
+  <div class="adm" id="adm" hidden>
+    <b>Nueva organización</b>
+    <input id="oName" placeholder="Nombre de la organización">
+    <button class="btn" data-act="addOrg">Crear organización</button>
+    <b>Nuevo proyecto</b>
+    <select id="pOrg" aria-label="Organización del proyecto"></select>
+    <input id="pName" placeholder="Nombre del proyecto">
+    <button class="btn" data-act="addProj">Crear proyecto</button>
+  </div>
+  <button class="btn sec" id="mode" data-act="mode" hidden></button>
+</aside>
+<main>
+  <div class="top">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <span class="who" id="who"></span>
+  </div>
+
+  <section id="s-dash" hidden><div id="dash"></div></section>
+  <section id="s-profile" hidden><div id="profile"></div></section>
+  <section id="s-team" hidden><div class="panel"><div class="meta">Cada persona aparece aquí tras su primer acceso. Marca los proyectos en los que trabaja: solo verá y podrá coger tareas de esos proyectos.</div></div><div id="tmlist"></div></section>
+  <section id="s-cats" hidden>
+    <div class="panel"><div class="meta" style="margin-bottom:8px">Baremo de recompensas: cada categoría fija las Placetas de sus tareas. Al crear una tarea se copia el importe vigente: cambiarlo aquí no afecta a las tareas ya creadas.</div>
+      <div class="row" style="margin:0"><input id="cName" placeholder="Nombre de la categoría" style="flex:3 1 220px"><input id="cReward" type="number" min="0" step="1" placeholder="Placetas"><button class="btn" data-act="addCat">Añadir categoría</button></div></div>
+    <div class="panel"><b>Cláusulas del convenio</b><div class="meta" style="margin:4px 0 8px">Este texto se incluye en el convenio de cada colaborador junto con sus equipos y el baremo. Cualquier cambio en las cláusulas, en un importe o en las categorías obliga a todos a aceptar de nuevo.</div>
+      <textarea id="clText" rows="6"></textarea><div style="margin-top:8px"><button class="btn" data-act="saveCl">Guardar cláusulas</button></div></div>
+    <div id="clist"></div>
+  </section>
+  <section id="s-tasks">
+    <div class="panel" id="tform" hidden>
+      <div class="row" style="margin:0">
+        <input id="tTitle" placeholder="Nueva tarea" style="flex:3 1 220px">
+        <select id="tCat" aria-label="Categoría de la tarea"></select>
+        <select id="tProj" aria-label="Proyecto de la tarea"></select>
+        <button class="btn" data-act="addTask">Añadir tarea</button>
+      </div>
+    </div>
+    <div id="tlist"></div>
+  </section>
+
+  <section id="s-inc" hidden>
+    <div class="panel">
+      <div class="row">
+        <select id="iType" aria-label="Tipo de incidencia"><option>Error de la web</option><option>Acceso o contraseña</option><option>Datos o facturación</option><option>Equipo o dispositivo</option><option>Otro</option></select>
+        <select id="iProj" aria-label="Proyecto afectado"></select>
+      </div>
+      <input id="iTitle" placeholder="Qué ha pasado, en una frase" style="margin-bottom:8px">
+      <textarea id="iDesc" rows="3" placeholder="Detalles: qué hacías, qué esperabas, qué ocurrió"></textarea>
+      <div style="margin-top:8px"><button class="btn" data-act="addInc">Declarar incidencia</button></div>
+    </div>
+    <div id="ilist"></div>
+  </section>
+
+  <section id="s-pay" hidden>
+    <div class="row"><input id="mon" type="month" aria-label="Mes" style="flex:0 1 200px"></div>
+    <div id="plist"></div>
+  </section>
+</main>
+</div>
+<div id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gateT"><div>
+  <h1 id="gateT">Convenio de colaboración</h1>
+  <p class="meta" id="gateWhy"></p>
+  <pre class="doc" id="gateDoc"></pre>
+  <label><input type="checkbox" id="gateChk"><span>He leído el convenio y acepto sus condiciones, el baremo de recompensas y los equipos que se me asignan.</span></label>
+  <button class="btn ok" id="gateBtn" data-act="accept" disabled>Aceptar convenio y continuar</button>
+</div></div>
+
+</template>
+<main id="m"><div class="empty" id="boot">Cargando…</div></main>
+<div id="toast" role="status"></div>
+<footer class="legal"><details><summary>Información legal y privacidad</summary><p>Responsable: Grupo de La Placeta. Nexe gestiona convocatorias, tareas, complementos y nóminas con base en la relación contractual, el consentimiento cuando proceda y las obligaciones legales aplicables.</p><p>Conforme al RGPD (Reglamento (UE) 2016/679), puedes ejercer acceso, rectificación, supresión, oposición, limitación y portabilidad. Los datos de DIP, IBAN, actividad y pagos se usan solo para identidad, gestión laboral, auditoría y ejecución bancaria, con acceso restringido y conservación limitada.</p><p>La relación laboral se somete a la normativa española aplicable, incluido el Estatuto de los Trabajadores, la Ley Orgánica 3/2018 de protección de datos y garantía de derechos digitales, y la normativa de servicios de pago que corresponda. La emisión de pagos requiere IBAN de ambas partes, autorización del Banco de La Placeta y registro de auditoría. Nexe no muestra claves bancarias privadas.</p><p>Contacto y solicitudes de derechos: a través del canal oficial de administración del Grupo de La Placeta. La información no sustituye el asesoramiento jurídico.</p></details></footer>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let LOCAL=false,db,user,uid,isAdmin=false,view='conv',convSel=null,run=null,edit=null,selC=null,qSel='',ADM=null,MIC=null,isPres=false;
+window.initGestor=function(db,user){
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const S={orgs:[],projects:[],tasks:[],task_comments:[],incidents:[],categories:[],members:[],assignments:[],acceptances:[],settings:[]};
+const R={};let gateOn=false;
+let meId=null,isAdmin=false,admin=false,mode='admin',tab=null,selOrg=null,selProj=null,names={};
+const ST={todo:'Disponible',doing:'En curso',review:'Pendiente de revisión',approved:'Aprobada',open:'Abierta',resolved:'Resuelta'};
+const month=()=>new Date().toISOString().slice(0,7);
+$('#mon').value=month();
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400)}
+const nm=id=>!id?'—':id===meId?'tú':(names[id]||'Miembro');
+const proj=id=>S.projects.find(p=>p.id===id);
+const org=id=>S.orgs.find(o=>o.id===id);
+const label=t=>{const p=proj(t.projectId);return p?esc((org(p.orgId)?.name||'')+' / '+p.name):'Sin proyecto'};
+
+async function w(fn,ok){try{await fn();if(ok)toast(ok)}catch(e){toast('No se pudo guardar: '+(e.message||e.code||'error'))}}
+
+document.addEventListener('click',e=>{
+  const tb=e.target.closest('[data-tab]');
+  if(tb){tab=tb.dataset.tab;render();return}
+  if(e.target.closest('#menuBtn')){const a=$('aside');a.classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',a.classList.contains('open'));return}
+  const nd=e.target.closest('[data-org],[data-all]');
+  if(nd){selOrg=nd.dataset.org||null;selProj=nd.dataset.proj||null;$('aside').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false');render();return}
+  const a=e.target.closest('[data-act]');if(!a||!db)return;
+  const id=a.dataset.id,act=a.dataset.act;
+  if(act==='mode'){mode=mode==='admin'?'worker':'admin';render();return}
+  const T=x=>w(()=>db.doc('tasks/'+id).update(x));
+  if(act==='accept'){if(!$('#gateChk').checked||!meId)return;const h=convHash(meId),old=S.acceptances.find(x=>x.id===meId),text=convDoc(meId);
+    (async()=>{let meta={ip:'no-disponible',signedAt:new Date().toISOString()};try{const r=await fetch('/api/firma-convenio',{method:'POST'});if(r.ok)meta=await r.json()}catch(e){}const signerDip=String(meId).toUpperCase();await w(()=>db.doc('acceptances/'+meId).set({name:names[meId]||S.members.find(m=>m.id===meId)?.name||'Miembro',signerDip,hash:h,acceptedAt:meta.signedAt,ip:meta.ip,signatureMethod:'DIP',text,version:'2026.10',history:[...(old?.history||[]),{hash:h,at:meta.signedAt,ip:meta.ip,signerDip}].slice(-50)}),'Convenio firmado y guardado')})()}
+  else if(act==='saveCl'){const t=$('#clText').value.trim();if(!t)return toast('El texto no puede estar vacío');w(()=>db.doc('settings/convenio').set({text:t}),'Cláusulas guardadas · todos deberán aceptar de nuevo')}
+  else if(act==='addOrg'){const n=$('#oName').value.trim();if(!n)return;w(()=>db.collection('orgs').add({name:n}),'Organización creada');$('#oName').value=''}
+  else if(act==='addProj'){const n=$('#pName').value.trim(),o=$('#pOrg').value;if(!n||!o)return toast('Elige organización y nombre');w(()=>db.collection('projects').add({name:n,orgId:o}),'Proyecto creado');$('#pName').value=''}
+  else if(act==='addTask'){const t=$('#tTitle').value.trim(),p=$('#tProj').value,c=S.categories.find(x=>x.id===$('#tCat').value);if(!t||!p||!c)return toast('Indica título, proyecto y categoría');
+    w(()=>db.collection('tasks').add({title:t,projectId:p,categoryId:c.id,category:c.name,reward:c.reward||0,status:'todo',assignee:null,createdAt:new Date().toISOString()}),'Tarea añadida');$('#tTitle').value=''}
+  else if(act==='addCat'){const n=$('#cName').value.trim(),r=Math.max(0,parseInt($('#cReward').value)||0);if(!n)return toast('Pon un nombre a la categoría');
+    w(()=>db.collection('categories').add({name:n,reward:r}),'Categoría añadida · todos deberán aceptar de nuevo');$('#cName').value='';$('#cReward').value=''}
+  else if(act==='delCat')w(()=>db.doc('categories/'+id).delete(),'Categoría eliminada · todos deberán aceptar de nuevo');
+  else if(act==='take')T({status:'doing',assignee:meId});
+  else if(act==='drop')T({status:'todo',assignee:null});
+  else if(act==='done')T({status:'review'});
+  else if(act==='approve')T({status:'approved',approvedAt:new Date().toISOString()});
+  else if(act==='devolver')T({status:'doing'});
+  else if(act==='delTask')w(()=>db.doc('tasks/'+id).delete());
+  else if(act==='addComment'){const input=document.querySelector(`[data-comment-input="${id}"]`),body=input?.value.trim();if(!body)return toast('Escribe un comentario');w(()=>db.collection('task_comments').add({taskId:id,body,authorId:meId,createdAt:new Date().toISOString()}),'Comentario añadido');if(input)input.value=''}
+  else if(act==='addInc'){const t=$('#iTitle').value.trim();if(!t)return toast('Describe la incidencia en el título');
+    w(()=>db.collection('incidents').add({title:t,desc:$('#iDesc').value.trim(),type:$('#iType').value,projectId:$('#iProj').value||null,status:'open',by:meId,createdAt:new Date().toISOString()}),'Incidencia declarada');$('#iTitle').value='';$('#iDesc').value=''}
+  else if(act==='resolve')w(()=>db.doc('incidents/'+id).update({status:'resolved',resolvedAt:new Date().toISOString()}));
+  else if(act==='reopen')w(()=>db.doc('incidents/'+id).update({status:'open'}));
+  else if(act==='delInc')w(()=>db.doc('incidents/'+id).delete());
+});
+$('#mon').addEventListener('change',render);
+document.addEventListener('change',e=>{const c=e.target.closest('[data-asg]');if(c&&db){const id=c.dataset.asg,cur=new Set(asg(id));c.checked?cur.add(c.value):cur.delete(c.value);w(()=>db.doc('assignments/'+id).set({projectIds:[...cur]}),'Asignación guardada · esa persona deberá aceptar de nuevo');return}
+  const i=e.target.closest('[data-cat]');if(i&&db)w(()=>db.doc('categories/'+i.dataset.cat).update({reward:Math.max(0,parseInt(i.value)||0)}),'Importe actualizado · todos deberán aceptar de nuevo')});
+
+function opts(el,list,ph){const v=el.value;el.innerHTML=list.map(([id,t])=>`<option value="${esc(id)}">${esc(t)}</option>`).join('')||`<option value="">${ph}</option>`;if(list.some(x=>x[0]===v))el.value=v}
+
+function render(){
+  if(!db||!document.getElementById('tree'))return;
+  admin=isAdmin&&mode==='admin';
+  updateGate();
+  const tabs=admin?[['dash','Resumen'],['tasks','Tareas'],['team','Equipo'],['cats','Baremos'],['inc','Incidencias'],['pay','Complemento'],['profile','Mi perfil']]:[['mine','Mis tareas'],['tasks','Disponibles'],['inc','Incidencias'],['pay','Mi complemento'],['profile','Mi perfil']];
+  if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];
+  $('#tabs').innerHTML=tabs.map(([k,l])=>`<button class="tab ${k===tab?'on':''}" data-tab="${k}">${l}</button>`).join('');
+  const sec={dash:'dash',profile:'profile',cats:'cats',team:'team',mine:'tasks',tasks:'tasks',inc:'inc',pay:'pay'}[tab];
+  ['dash','profile','cats','team','tasks','inc','pay'].forEach(k=>$('#s-'+k).hidden=k!==sec);
+  $('#who').textContent=(admin?'Vista administración':'Vista trabajador')+(names[meId]?' · '+names[meId]:'');
+  $('#mode').hidden=!isAdmin;$('#mode').textContent=admin?'Ver como trabajador':'Volver a vista admin';
+  $('#adm').hidden=!admin;$('#tform').hidden=!admin||tab!=='tasks';
+  // árbol
+  let h=`<button class="node ${!selOrg&&!selProj?'on':''}" data-all="1">Todo el grupo</button>`;
+  vOrgs().forEach(o=>{h+=`<button class="node org ${selOrg===o.id&&!selProj?'on':''}" data-org="${esc(o.id)}">${esc(o.name)}</button>`;
+    vProjects().filter(p=>p.orgId===o.id).forEach(p=>h+=`<button class="node proj ${selProj===p.id?'on':''}" data-org="${esc(o.id)}" data-proj="${esc(p.id)}">${esc(p.name)}</button>`)});
+  $('#tree').innerHTML=h;
+  $('#menuBtn').textContent=(selProj?proj(selProj)?.name:selOrg?org(selOrg)?.name:'Todo el grupo')+' ▾';
+  const pl=vProjects().map(p=>[p.id,(org(p.orgId)?.name||'')+' / '+p.name]);
+  opts($('#pOrg'),S.orgs.map(o=>[o.id,o.name]),'Crea una organización');
+  opts($('#tProj'),pl,'Crea un proyecto');
+  opts($('#tCat'),S.categories.map(c=>[c.id,c.name+' · '+(c.reward||0)+' P']),'Crea una categoría');
+  opts($('#iProj'),[['','Sin proyecto concreto'],...pl],'');
+  if(tab==='dash')rDash();else if(tab==='profile')rProfile();else if(tab==='inc')rInc();else if(tab==='pay')rPay();else if(tab==='cats')rCats();else if(tab==='team')rTeam();else rTasks();
+  resolveNames();
+}
+const asg=id=>S.assignments.find(a=>a.id===id)?.projectIds||[];
+const myP=()=>new Set(asg(meId));
+const vProjects=()=>admin?S.projects:S.projects.filter(p=>myP().has(p.id));
+const vOrgs=()=>S.orgs.filter(o=>admin||vProjects().some(p=>p.orgId===o.id));
+const inScope=pid=>{const p=proj(pid);return selProj?pid===selProj:selOrg?p?.orgId===selOrg:true};
+async function rProfile(){const p=await user.profiles([meId]).catch(()=>({}));const v=p[meId]||{};$('#profile').innerHTML=`<div class="panel"><h2>Perfil del candidato</h2><p class="meta">Los datos personales se consultan desde PlacetaID v27 y no se editan ni duplican en Nexe.</p><div class="row"><b>Nombre</b><span>${esc(v.name||v.nombre||names[meId]||'No disponible')}</span></div><div class="row"><b>DIP</b><span>${esc(v.dip||'Verificado por PlacetaID v27')}</span></div><div class="row"><b>Identidad</b><span class="st approved">Sesión PlacetaID v27</span></div></div>`}
+
+function card(t){
+  const mine=t.assignee===meId;let b='';
+  const comments=S.task_comments.filter(c=>c.taskId===t.id).sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
+  if(t.status==='todo')b+=`<button class="btn" data-act="take" data-id="${t.id}">Asignarme</button>`;
+  if(t.status==='doing'&&(mine||admin))b+=`<button class="btn ok" data-act="done" data-id="${t.id}">Marcar hecha</button><button class="btn sec" data-act="drop" data-id="${t.id}">Soltar</button>`;
+  if(t.status==='review'&&admin)b+=`<button class="btn ok" data-act="approve" data-id="${t.id}">Aprobar y abonar</button><button class="btn sec" data-act="devolver" data-id="${t.id}">Devolver</button>`;
+  if(admin)b+=`<button class="btn bad" data-act="delTask" data-id="${t.id}" aria-label="Eliminar tarea">Eliminar</button>`;
+  return `<article class="task"><div class="coin" aria-label="${t.reward||0} Placetas"><span>${t.reward||0}<small>Placetas</small></span></div>
+  <div><h3>${esc(t.title)}</h3><div class="meta"><span class="st ${t.status}">${ST[t.status]}</span>${t.category?esc(t.category)+' · ':''}${label(t)}${t.assignee?' · '+esc(nm(t.assignee)):''}</div><details class="task-comments"><summary>Comentarios (${comments.length})</summary>${comments.map(c=>`<div class="meta comment"><b>${esc(nm(c.authorId))}</b> · ${esc(String(c.createdAt||'').replace('T',' ').slice(0,16))}<br>${esc(c.body)}</div>`).join('')||'<div class="meta">Aún no hay comentarios.</div>'}<div class="comment-box"><input type="text" data-comment-input="${esc(t.id)}" placeholder="Escribe al equipo…" maxlength="2000" aria-label="Comentario de la tarea"><button class="btn sm" data-act="addComment" data-id="${esc(t.id)}">Comentar</button></div></details></div>
+  <div class="act">${b}</div></article>`}
+function rTasks(){
+  let ts=S.tasks.filter(t=>inScope(t.projectId));
+  let pre='';
+  if(tab==='mine'){
+    ts=ts.filter(t=>t.assignee===meId);const m=month();
+    const ap=ts.filter(t=>t.status==='approved'&&String(t.approvedAt||'').slice(0,7)===m).reduce((a,t)=>a+(t.reward||0),0);
+    const pe=ts.filter(t=>t.status==='review').reduce((a,t)=>a+(t.reward||0),0);
+    pre=`<div class="kpis"><div class="kpi"><div class="big">${ap}</div><div class="meta">Placetas aprobadas este mes</div></div><div class="kpi"><div class="big">${pe}</div><div class="meta">en revisión</div></div></div>`;
+  }else if(!admin)ts=ts.filter(t=>t.status==='todo'&&myP().has(t.projectId));
+  ts.sort((a,b)=>(a.status==='approved')-(b.status==='approved')||(b.reward||0)-(a.reward||0));
+  const emptyMsg=tab==='mine'?'No tienes tareas. Cógelas en la pestaña Disponibles.':(!admin&&!myP().size)?'Administración aún no te ha asignado a ningún proyecto.':!S.projects.length?'Aún no hay proyectos. '+(admin?'Crea una organización y un proyecto en el panel izquierdo.':''):!admin?'No hay tareas disponibles ahora mismo.':'No hay tareas en esta selección.';
+  $('#tlist').innerHTML=pre+(ts.length?ts.map(card).join(''):`<div class="empty">${emptyMsg}</div>`);
+}
+function rCats(){
+  if(document.activeElement!==$('#clText'))$('#clText').value=clauses();
+  const cs=[...S.categories].sort((a,b)=>(b.reward||0)-(a.reward||0));
+  $('#clist').innerHTML=cs.length?`<div class="panel"><table><thead><tr><th>Categoría</th><th>Placetas</th><th></th></tr></thead><tbody>${cs.map(c=>`<tr><td>${esc(c.name)}</td><td><input type="number" min="0" step="1" value="${c.reward||0}" data-cat="${c.id}" style="width:90px" aria-label="Placetas de ${esc(c.name)}"></td><td><button class="btn bad" data-act="delCat" data-id="${c.id}">Eliminar</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Aún no hay categorías en el baremo. Añade la primera para poder crear tareas con recompensa.</div>';
+}
+function rTeam(){
+  const ms=[...S.members].sort((a,b)=>String(a.name).localeCompare(b.name));
+  if(!ms.length){$('#tmlist').innerHTML='<div class="empty">Nadie se ha registrado todavía. Comparte el enlace.</div>';return}
+  if(!S.projects.length){$('#tmlist').innerHTML='<div class="empty">Crea primero organizaciones y proyectos para poder asignar personas.</div>';return}
+  $('#tmlist').innerHTML=ms.map(m=>{const cur=new Set(asg(m.id));
+    return `<div class="panel"><h2>${esc(m.name)}${m.id===meId?' (tú)':''} <span class="meta">· ${cur.size} proyecto${cur.size===1?'':'s'}</span></h2>${convStatus(m.id)}`+
+    S.orgs.map(o=>{const ps=S.projects.filter(p=>p.orgId===o.id);return ps.length?`<div style="margin-bottom:6px"><b>${esc(o.name)}</b><div class="row" style="margin:4px 0 0">${ps.map(p=>`<label style="flex:0 1 auto;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-asg="${m.id}" value="${p.id}" ${cur.has(p.id)?'checked':''}>${esc(p.name)}</label>`).join('')}</div></div>`:''}).join('')+`</div>`}).join('');
+}
+function rDash(){
+  const m=month(),rev=S.tasks.filter(t=>t.status==='review');
+  const oi=S.incidents.filter(i=>i.status==='open').length,dn=S.tasks.filter(t=>t.status==='doing').length;
+  const sum=S.tasks.filter(t=>t.status==='approved'&&String(t.approvedAt||'').slice(0,7)===m).reduce((a,t)=>a+(t.reward||0),0);
+  const k=(n,l,tb)=>`<button class="kpi" data-tab="${tb}"><div class="big">${n}</div><div class="meta">${l}</div></button>`;
+  $('#dash').innerHTML=`<div class="kpis">${k(rev.length,'tareas por revisar','tasks')}${k(oi,'incidencias abiertas','inc')}${k(dn,'tareas en curso','tasks')}${k(sum,'Placetas aprobadas este mes','pay')}</div><h2>Por revisar</h2>`+(rev.length?rev.map(card).join(''):'<div class="empty">No hay tareas esperando revisión.</div>');
+}
+function rInc(){
+  const is=S.incidents.filter(i=>admin||i.by===meId).filter(i=>!i.projectId||inScope(i.projectId)).sort((a,b)=>(a.status==='resolved')-(b.status==='resolved')||String(b.createdAt).localeCompare(a.createdAt));
+  if(!is.length){$('#ilist').innerHTML='<div class="empty">'+(admin?'No hay incidencias.':'No has declarado incidencias. Si algo falla, decláralo arriba para que administración lo revise.')+'</div>';return}
+  $('#ilist').innerHTML=is.map(i=>`<article class="task inc" style="grid-template-columns:1fr auto"><div><h3>${esc(i.title)}</h3>
+    <div class="meta"><span class="st ${i.status}">${ST[i.status]}</span>${esc(i.type)} · ${i.projectId?label({projectId:i.projectId}):'General'} · ${esc(nm(i.by))} · ${esc(String(i.createdAt||'').slice(0,10))}</div>
+    ${i.desc?`<p>${esc(i.desc)}</p>`:''}</div>
+    <div class="act">${admin?(i.status==='open'?`<button class="btn ok" data-act="resolve" data-id="${i.id}">Marcar resuelta</button>`:`<button class="btn sec" data-act="reopen" data-id="${i.id}">Reabrir</button>`)+`<button class="btn bad" data-act="delInc" data-id="${i.id}">Eliminar</button>`:''}</div></article>`).join('');
+}
+
+function rPay(){
+  const m=$('#mon').value||month();
+  const ap=S.tasks.filter(t=>t.status==='approved'&&String(t.approvedAt||'').slice(0,7)===m&&inScope(t.projectId)&&t.assignee);
+  const by={};ap.forEach(t=>{(by[t.assignee]??={n:0,sum:0});by[t.assignee].n++;by[t.assignee].sum+=t.reward||0});
+  const mine=by[meId]||{n:0,sum:0};
+  let h=`<div class="panel"><div class="meta">Tu complemento de actividad en ${esc(m)}</div><div class="big">${mine.sum} Placetas</div><div class="meta">${mine.n} tarea${mine.n===1?'':'s'} aprobada${mine.n===1?'':'s'}</div></div>`;
+  if(admin){const rows=Object.entries(by).sort((a,b)=>b[1].sum-a[1].sum);
+    h+=rows.length?`<div class="panel"><table><thead><tr><th>Persona</th><th>Tareas</th><th>Total a abonar</th></tr></thead><tbody>${rows.map(([id,v])=>`<tr><td>${esc(nm(id))}</td><td>${v.n}</td><td><b>${v.sum}</b></td></tr>`).join('')}<tr><td><b>Total del grupo</b></td><td>${rows.reduce((a,r)=>a+r[1].n,0)}</td><td><b>${rows.reduce((a,r)=>a+r[1].sum,0)}</b></td></tr></tbody></table></div>`:'<div class="empty">Ninguna tarea aprobada este mes en la selección actual.</div>'}
+  $('#plist').innerHTML=h;
+}
+
+const DEF_CL="1. El colaborador percibirá un complemento mensual de actividad, en Placetas, por las tareas aprobadas por administración, según el baremo vigente.\n2. El colaborador trabajará únicamente en los equipos y proyectos que se le asignen.\n3. Cualquier cambio en el baremo, en los equipos asignados o en estas cláusulas requiere una nueva aceptación de este convenio.";
+const clauses=()=>S.settings.find(x=>x.id==='convenio')?.text||DEF_CL;
+const myProjs=uid=>asg(uid).filter(id=>proj(id)).sort();
+function convHash(uid){const bar=[...S.categories].sort((a,b)=>a.name.localeCompare(b.name)).map(c=>c.name+':'+(c.reward||0)).join(';');const str=myProjs(uid).join(',')+'|'+bar+'|'+clauses();let h=5381;for(let i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))>>>0;return h.toString(36)}
+function convDoc(uid){
+  const eq=myProjs(uid).map(id=>'- '+(org(proj(id).orgId)?.name||'')+' / '+proj(id).name);
+  const bar=[...S.categories].sort((a,b)=>a.name.localeCompare(b.name)).map(c=>'- '+c.name+': '+(c.reward||0)+' Placetas');
+  const who=S.members.find(m=>m.id===uid)?.name||names[uid]||'Colaborador';
+  return 'CONVENIO DE COLABORACIÓN EN PROYECTO Y COMPLEMENTOS DE ACTIVIDAD\nGrupo de La Placeta · Versión 2026.10\n\nPARTE COLABORADORA\nNombre: '+who+'\nDIP firmante: '+String(uid).toUpperCase()+'\n\nOBJETO Y PROYECTO\nLa colaboración se vincula a los proyectos y tareas asignados en Nexe. La naturaleza jurídica se determinará conforme a las circunstancias reales y a la legislación aplicable; este convenio no excluye derechos imperativos.\n\nACTIVIDADES Y COMPLEMENTOS\nLa asignación no genera por sí sola un complemento. Solo las actividades validadas generan el complemento establecido en el baremo. Los estados son pendiente, en curso, en revisión, validada, rechazada e invalidada.\n\nPLACETAS\nLas Pz son una unidad interna de reconocimiento y no moneda de curso legal. Los pagos monetarios, cuando procedan, se tramitan separadamente por el Banco de La Placeta con IBAN configurado y autorización.\n\nEQUIPOS ASIGNADOS\n'+(eq.join('\n')||'- (ninguno)')+'\n\nBAREMO DE RECOMPENSAS\n'+(bar.join('\n')||'- (sin categorías)')+'\n\nCLÁUSULAS\n'+clauses()+'\n\nPROTECCIÓN DE DATOS\nTratamiento conforme al Reglamento (UE) 2016/679 y Ley Orgánica 3/2018. El DIP, IP, fecha, hash y trazabilidad de firma se conservan para identidad, ejecución, auditoría y defensa de derechos, con acceso restringido y conservación limitada.';
+}
+const needs=uid=>myProjs(uid).length>0&&S.acceptances.find(a=>a.id===uid)?.hash!==convHash(uid);
+function updateGate(){
+  const ready=['projects','assignments','acceptances','categories','settings'].every(k=>R[k]);
+  gateOn=!isAdmin&&ready&&!!meId&&needs(meId);
+  $('#gate').hidden=!gateOn;
+  if(!gateOn)return;
+  const hs=convHash(meId);
+  $('#gateDoc').textContent=convDoc(meId);
+  if($('#gate').dataset.h!==hs){$('#gate').dataset.h=hs;$('#gateChk').checked=false;$('#gateBtn').disabled=true}
+  $('#gateWhy').textContent=S.acceptances.find(a=>a.id===meId)?'Ha cambiado el baremo, tus equipos o las cláusulas desde tu última aceptación. Para continuar debes aceptar la versión vigente.':'Para empezar a trabajar debes leer y aceptar el convenio vigente.';
+}
+$('#gateChk').addEventListener('change',e=>{$('#gateBtn').disabled=!e.target.checked});
+function convStatus(uid){
+  const ps=myProjs(uid);if(!ps.length)return '';const a=S.acceptances.find(x=>x.id===uid),ok=a&&a.hash===convHash(uid);
+  return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" onclick="downloadAgreement(${JSON.stringify(a.text)},${JSON.stringify(a.signerDip||uid)},${JSON.stringify(a.acceptedAt)})">Descargar PDF</button></details>`:''}`;
+}
+window.downloadAgreement=(text,dip,at)=>{const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Convenio firmado · ${dip}</title><style>body{font:14px Arial;line-height:1.5;max-width:800px;margin:40px auto;color:#17231f}pre{white-space:pre-wrap}footer{margin-top:30px;border-top:1px solid #999;padding-top:12px;font-size:12px}</style></head><body><pre>${esc(text)}</pre><footer>Firma electrónica interna mediante DIP: ${esc(dip)}<br>Fecha y hora exactas: ${esc(at)}<br>Documento descargado desde Nexe. Usa «Guardar como PDF» en el diálogo de impresión.</footer></body></html>`;const w=window.open('about:blank','_blank');if(!w)return toast('Permite ventanas emergentes para generar el PDF');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)};
+let resolving=false;
+async function resolveNames(){
+  if(resolving||!user)return;
+  const ids=[...new Set([...S.tasks.map(t=>t.assignee),...S.incidents.map(i=>i.by),meId].filter(x=>x&&!names[x]))];
+  if(!ids.length)return;resolving=true;
+  try{const ps=await user.profiles(ids);ids.forEach(id=>names[id]=ps[id]?.name||'Miembro');resolving=false;render()}catch(e){ids.forEach(id=>names[id]='Miembro');resolving=false}
+}
+
+(async()=>{
+  
+  if(!db||!user){$('#banner').hidden=false;db=null;return}
+  try{meId=await user.id();isAdmin=await user.canEdit()}catch(e){}
+  try{const p=await user.profiles([meId]);await db.doc('members/'+meId).set({name:p[meId]?.name||'Miembro'})}catch(e){}
+  ['orgs','projects','tasks','task_comments','incidents','categories','members','assignments','acceptances','settings'].forEach(k=>db.collection(k).onSnapshot(s=>{S[k]=s.docs.map(d=>({id:d.id,...d.data()}));R[k]=1;render()},e=>console.error(e)));
+  render();
+})();
+
+window.__gestorRender=render;
+};
+let GNODE=null;
+const MODO='nube'; // Producción: no se permite degradar a localStorage.
+const PRESIDENTE_DIP='23749931M';
+const GESTOR_URL='https://claude.ai/artifact/VSnvce7Tf5Wrwq4yE74Pan';
+const S={conv:[],q:[],insc:[],int:[],notas:[],res:[]};
+const slug=t=>norm(t).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'x';
+const lines=t=>String(t||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)};
+const w=async(fn,ok)=>{try{await fn();if(ok)toast(ok)}catch(e){toast('No se pudo guardar: '+(e.message||e.code||'error'))}};
+const conv=id=>S.conv.find(c=>c.id===id);
+const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const fdate=s=>String(s||'').slice(0,10);
+const open_=c=>c.estado==='abierta'&&(!c.cierre||c.cierre>=new Date().toISOString().slice(0,10));
+
+document.addEventListener('click',e=>{
+  const v=e.target.closest('[data-v]');if(v&&!run){view=v.dataset.v;convSel=null;render();return}
+  const a=e.target.closest('[data-act]');if(!a||!db)return;const act=a.dataset.act,id=a.dataset.id;
+  if(act==='insc'){if(!$('#chk-'+id)?.checked)return toast('Marca la declaración de requisitos');
+    w(()=>db.doc(`aspirantes/${uid}/inscripciones/${id}`).set({convId:id,at:new Date().toISOString()}),'Inscripción registrada')}
+  else if(act==='pruebas'){convSel=id;view='conv';render()}
+  else if(act==='back'){convSel=null;render()}
+  else if(act==='ready'){startRun(id,a.dataset.amb)}
+  else if(act==='submit')submitRun();
+  else if(act==='seed')seed();
+  else if(isAdmin)adminAct(act,id,a);
+});
+
+function intentosDe(cid,aid){return S.int.filter(i=>i.convId===cid&&i.amb===aid)}
+const pruebaVigente=i=>i&&i.estado==='enviado'&&new Date(i.at).getTime()+183*24*60*60*1000>Date.now();
+function estadoAmb(cid,aid){
+  const it=intentosDe(cid,aid),i=it.find(x=>x.estado==='enviado');
+  if(i&&pruebaVigente(i)){const n=S.notas.find(x=>x.id===i.id);return n?{k:'nota',i,n}:{k:'pend',i}}
+  const inv=it.filter(x=>x.estado==='invalidado').sort((x,y)=>String(y.at).localeCompare(x.at));
+  return inv.length?{k:'inv',i:inv[0],n:inv.length}:{k:'libre'};
+}
+const RES={plaza:['¡Plaza adjudicada!','c-ok'],reserva:['Lista de reserva','c-wait'],excluida:['Excluido/a del proceso','c-bad']};
+const gestor=cid=>S.res.find(x=>x.id===cid)?.estado==='plaza'?`<div class="card" style="background:rgba(47,125,91,.1);border-color:var(--ok)"><b>Tienes plaza.</b> Ya puedes acceder al gestor de tareas del Grupo de La Placeta.<div style="margin-top:8px"><button class="btn ok" data-v="tareas">Abrir gestor de tareas</button></div></div>`:'';
+async function rNominas(){const m=$('#m');m.innerHTML='<article class="card"><h2>Nóminas y complementos de actividad</h2><p class="meta">Las tareas aprobadas se incorporan como complementos de actividad. Nexe prepara la nómina y la envía al Banco de La Placeta con los IBAN configurados en ambas partes.</p><div id="payrollState" class="empty">Cargando estado…</div></article>';try{const r=await fetch('/api/banco-nominas?action=estado');const d=await r.json();if(!r.ok)throw new Error(d.error||'No configurado');$('#payrollState').innerHTML=`<div class="kpis"><div class="kpi"><b>${d.periodos?.length||0}</b><span class="meta">nóminas</span></div><div class="kpi"><b>${d.contratos?.length||0}</b><span class="meta">contratos</span></div></div><p class="meta">La emisión requiere IBAN de origen y destino, autorización y trazabilidad del Banco.</p>`}catch(e){$('#payrollState').innerHTML='<div class="warn">Servicio de nóminas no configurado. Define BANCO_NOMINAS_URL y BANCO_CRM_KEY en Vercel.</div>'}}
+const resChip=cid=>{const r=S.res.find(x=>x.id===cid);return r&&RES[r.estado]?`<span class="chip ${RES[r.estado][1]}">${RES[r.estado][0]}</span>`:''};
+function render(){
+  if(!db)return;
+  const showT=isAdmin||S.res.some(r=>r.estado==='plaza'),bt=$('#navT');
+  if(showT&&!bt)$('#nav').insertAdjacentHTML('beforeend','<button data-v="tareas" id="navT">Tareas</button>');else if(!showT&&bt)bt.remove();
+  const bn=$('#navNom');if(showT&&!bn)$('#nav').insertAdjacentHTML('beforeend','<button data-v="nominas" id="navNom">Nóminas</button>');else if(!showT&&bn)bn.remove();
+  if(!isAdmin&&showT&&(view==='conv'||view==='exp'))view='tareas';
+  if(!showT&&view==='tareas')view='conv';
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  const m=$('#m');
+  if(run)return;
+  m.classList.toggle('wide',view==='tareas');
+  if(view==='tareas'){
+    if(!GNODE){GNODE=document.createElement('div');GNODE.id='gestor';GNODE.appendChild($('#gtpl').content.cloneNode(true));m.innerHTML='';m.appendChild(GNODE);initGestor(db,user)}
+    else if(!m.contains(GNODE)){m.innerHTML='';m.appendChild(GNODE);window.__gestorRender&&window.__gestorRender()}
+    return}
+  if(view==='nominas')return rNominas();
+  if(view==='gest'){if(m.contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;return m.innerHTML=rGest()}
+  if(view==='sel')return selRender();
+  if(view==='pres')return presRender();
+  if(view==='exp')return m.innerHTML=rExp();
+  if(convSel&&conv(convSel))return m.innerHTML=rPruebas(conv(convSel));
+  const cs=[...S.conv].sort((a,b)=>String(b.creada).localeCompare(a.creada));
+  let h=isAdmin?`<div class="card"><b>Administración</b><div class="meta" style="margin:4px 0 8px">Sin convocatorias aún, puedes cargar una de ejemplo para probar el flujo completo.</div><button class="btn sec" data-act="seed">Cargar convocatoria de ejemplo</button></div>`:'';
+  h+=cs.length?cs.map(c=>{
+    const ins=S.insc.some(i=>i.id===c.id),ab=open_(c);
+    return `<article class="card"><h2>${esc(c.titulo)}</h2><div class="meta">Proyecto: ${esc(c.proyecto)} · ${c.cierre?'cierre '+esc(c.cierre):'sin fecha de cierre'}</div>
+    <div class="chips"><span class="plazas">${c.plazas} plaza${c.plazas===1?'':'s'}</span>${c.adjudicadas&&c.adjudicadas<c.plazas?`<span class="chip c-wait">${c.plazas-c.adjudicadas} pendiente(s)</span>`:''}<span class="chip ${ab?'c-ok':'c-mut'}">${ab?'Abierta':'Cerrada'}</span>${ins?'<span class="chip c-blue">Inscrito</span>':''}${resChip(c.id)}</div>${gestor(c.id)}
+    <h3>Requisitos</h3><ul class="req">${(c.requisitos||[]).map(r=>`<li>${esc(r)}</li>`).join('')||'<li>Sin requisitos específicos</li>'}</ul>
+    <h3>Pruebas</h3><div class="chips">${(c.ambitos||[]).map(a=>`<span class="chip c-mut">${esc(a.nombre)}</span>`).join('')}</div>
+    ${ins?`<button class="btn" data-act="pruebas" data-id="${c.id}">Ir a las pruebas</button>`:ab?`<label style="display:flex;gap:10px;margin:10px 0;align-items:flex-start"><input type="checkbox" id="chk-${c.id}" style="width:20px;height:20px;flex:none"><span>Declaro que cumplo los requisitos de esta convocatoria.</span></label><button class="btn ok" data-act="insc" data-id="${c.id}">Inscribirme</button>`:''}</article>`}).join(''):'<div class="empty">No hay convocatorias publicadas ahora mismo.</div>';
+  m.innerHTML=h;
+}
+
+function rPruebas(c){
+  const rows=(c.ambitos||[]).map(a=>{const e=estadoAmb(c.id,a.id);let st,btn='';
+    if(e.k==='libre'){st='<span class="chip c-mut">Sin realizar</span>';btn=open_(c)?`<button class="btn" data-act="ready" data-id="${c.id}" data-amb="${a.id}">Hacer prueba</button>`:''}
+    else if(e.k==='inv'){st=`<span class="chip c-bad">Invalidada ${e.n}×</span> <span class="meta">${esc(e.i.motivo)} · cada invalidación resta puntos en la selección</span>`;btn=open_(c)?`<button class="btn" data-act="ready" data-id="${c.id}" data-amb="${a.id}">Repetir prueba</button>`:''}
+    else if(e.k==='pend')st='<span class="chip c-wait">Pendiente de corrección</span>';
+    else st=`<span class="chip c-ok">Nota ${e.n.nota}/${e.n.max}</span>`;
+    return `<div class="row"><div><b>${esc(a.nombre)}</b><div>${st}</div></div>${btn}</div>`}).join('');
+  return `<button class="btn sec" data-act="back">← Convocatorias</button><article class="card" style="margin-top:12px"><h2>${esc(c.titulo)}</h2><div class="meta">${esc(c.proyecto)} · una sola oportunidad por prueba</div>${rows}</article>`;
+}
+
+function rExp(){
+  const its=[...S.int].sort((a,b)=>String(b.at).localeCompare(a.at));
+  let h=`<article class="card"><h2>Mi expediente</h2><div class="meta">Inscripciones: ${S.insc.length} · Pruebas realizadas: ${its.length}</div>${S.insc.map(i=>`<div class="row"><span>${esc(conv(i.id)?.titulo||i.id)}</span>${resChip(i.id)||'<span class="chip c-mut">En proceso</span>'}</div>`).join('')}</article>`;
+  if(!its.length)return h+'<div class="empty">Aún no has realizado ninguna prueba.</div>';
+  return h+`<article class="card"><h3 style="margin-top:0">Historial</h3>`+its.map(i=>{const c=conv(i.convId),a=(c?.ambitos||[]).find(x=>x.id===i.amb),n=S.notas.find(x=>x.id===i.id);
+    const st=i.estado==='invalidado'?`<span class="chip c-bad">Invalidada</span> <span class="meta">${esc(i.motivo)}</span>`:n?`<span class="chip c-ok">Nota ${n.nota}/${n.max}</span>`:'<span class="chip c-wait">Pendiente de corrección</span>';
+    return `<div class="row"><div><b>${esc(a?.nombre||'Prueba')}</b><div class="meta">${esc(c?.titulo||'')} · ${fdate(i.at)}</div></div><div>${st}</div></div>`}).join('')+'</article>';
+}
+
+/* ---- Prueba con control de integridad ---- */
+const HANDLERS=[];
+function on(t,fn,tg=document){tg.addEventListener(t,fn,true);HANDLERS.push([tg,t,fn])}
+function startRun(cid,aid){
+  const c=conv(cid),a=c.ambitos.find(x=>x.id===aid),qs=S.q.filter(q=>(q.convId===cid||q.convId==='global')&&q.amb===aid).sort((x,y)=>(x.orden||0)-(y.orden||0));
+  if(!qs.length)return toast('Esta prueba aún no tiene preguntas');
+  if(intentosDe(cid,aid).some(i=>pruebaVigente(i)))return toast('Esta prueba está vigente durante seis meses desde su realización');
+  run={cid,aid,qs,done:false};
+  $('#m').innerHTML=`<article class="card"><h2>${esc(a.nombre)}</h2><div class="meta">${esc(c.titulo)}</div>
+  <div class="warn"><b>Antes de empezar</b><br>Tienes una sola oportunidad. La prueba se <b>invalida</b> y queda en tu historial si pegas, copias o arrastras texto, cambias de pestaña o ventana, o intentas capturar o imprimir la pantalla. Se te pedirá el <b>micrófono</b>: si se detecta voz durante la prueba, se <b>suspende</b>. Solo se mide si hay voz en tu dispositivo; no se graba ni se guarda audio. Si se invalida podrás repetirla, pero cada invalidación <b>resta puntos</b> en la selección.</div>
+  <button class="btn ok" id="go">Empezar prueba</button> <button class="btn sec" id="no">Volver</button></article>`;
+  $('#go').onclick=async()=>{if(await startMic())beginQs()};$('#no').onclick=()=>{run=null;render()};
+}
+function beginQs(){
+  const c=conv(run.cid),a=c.ambitos.find(x=>x.id===run.aid);
+  $('#m').innerHTML=`<article class="card"><h2>${esc(a.nombre)}</h2>`+run.qs.map((q,i)=>`<div class="q"><p>${i+1}. ${esc(q.texto)}</p>${q.opciones?.length?q.opciones.map((o,j)=>`<label><input type="radio" name="q_${q.id}" value="${j}"><span>${esc(o)}</span></label>`).join(''):`<input type="text" name="q_${q.id}" autocomplete="off" aria-label="Respuesta">`}</div>`).join('')+`<button class="btn ok" data-act="submit" style="margin-top:12px">Enviar prueba</button></article>`;
+  ['paste','drop','copy','cut'].forEach(t=>on(t,e=>{e.preventDefault();invalidate(t==='paste'?'Pegado de contenido':t==='drop'?'Arrastre de contenido':'Copia de contenido')}));
+  on('contextmenu',e=>e.preventDefault());
+  on('visibilitychange',()=>{if(document.hidden)invalidate('Cambio de pestaña o ventana')});
+  on('blur',()=>setTimeout(()=>{if(!document.hasFocus())invalidate('Salida de la ventana de la prueba')},150),window);
+  on('beforeprint',()=>invalidate('Intento de impresión'),window);
+  on('keydown',e=>{const k=(e.key||'').toLowerCase();
+    if(k==='printscreen'||((e.ctrlKey||e.metaKey)&&k==='p')||(e.metaKey&&e.shiftKey)||(e.ctrlKey&&e.shiftKey&&k==='s'))invalidate('Intento de captura de pantalla')});
+}
+async function startMic(){
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    const ctx=new (window.AudioContext||window.webkitAudioContext)(),an=ctx.createAnalyser();an.fftSize=1024;ctx.createMediaStreamSource(st).connect(an);
+    const buf=new Float32Array(an.fftSize),rms=()=>{an.getFloatTimeDomainData(buf);let q=0;for(const x of buf)q+=x*x;return Math.sqrt(q/buf.length)};
+    let base=0,voice=0;const t0=Date.now();
+    const iv=setInterval(()=>{const r=rms();if(Date.now()-t0<1500){base=Math.max(base,r);return}
+      voice=r>Math.max(.03,base*2.5)?voice+100:Math.max(0,voice-60);if(voice>=1500)invalidate('Voz detectada durante la prueba')},100);
+    st.getAudioTracks()[0].onended=()=>invalidate('Micrófono desactivado durante la prueba');
+    MIC={st,ctx,iv};return true;
+  }catch(e){toast('Debes permitir el micrófono para hacer la prueba');return false}
+}
+function endRun(){if(MIC){clearInterval(MIC.iv);MIC.st.getAudioTracks()[0].onended=null;MIC.st.getTracks().forEach(t=>t.stop());MIC.ctx.close();MIC=null}
+HANDLERS.splice(0).forEach(([t,n,f])=>t.removeEventListener(n,f,true))}
+function invalidate(motivo){
+  if(!run||run.done)return;run.done=true;endRun();const r=run;
+  w(()=>db.collection(`aspirantes/${uid}/intentos`).add({convId:r.cid,amb:r.aid,estado:'invalidado',motivo,at:new Date().toISOString()}));
+  $('#m').innerHTML=`<article class="card"><h2>Prueba invalidada</h2><div class="warn">${esc(motivo)}. La prueba queda invalidada y registrada en tu historial.</div><button class="btn" id="ok">Entendido</button></article>`;
+  $('#ok').onclick=()=>{run=null;render()};
+}
+function submitRun(){
+  if(!run||run.done)return;const resp={};
+  run.qs.forEach(q=>{const el=document.querySelector(`[name="q_${q.id}"]`);
+    resp[q.id]=q.opciones?.length?(document.querySelector(`[name="q_${q.id}"]:checked`)?.value??null):(el?.value||'')});
+  if(Object.values(resp).some(v=>v===null||v===''))return toast('Responde todas las preguntas');
+  run.done=true;endRun();const r=run;
+  w(async()=>{const d={convId:r.cid,amb:r.aid,estado:'enviado',respuestas:resp,at:new Date().toISOString()},ref=await db.collection(`aspirantes/${uid}/intentos`).add(d);if(LOCAL)gradeIntento(uid,ref.id,d)});
+  $('#m').innerHTML=`<article class="card"><h2>Prueba enviada</h2><p>Prueba enviada: se corrige automáticamente y la nota aparece en tu expediente.</p><button class="btn" id="ok">Volver</button></article>`;
+  $('#ok').onclick=()=>{run=null;render()};
+}
+
+/* ---- Almacenamiento local (misma API que la base de datos compartida) ---- */
+function localInit(){
+  const K='atrio:db',U='atrio:user',rd=()=>{try{return JSON.parse(localStorage.getItem(K)||'{}')}catch(e){return {}}},wr=d=>localStorage.setItem(K,JSON.stringify(d));
+  const subs=new Set(),ping=()=>subs.forEach(f=>f());
+  const kids=p=>{const d=rd(),pre=p+'/';return Object.keys(d).filter(k=>k.startsWith(pre)&&!k.slice(pre.length).includes('/')).sort().map(k=>({id:k.slice(pre.length),data:()=>d[k]}))};
+  const ref=p=>({id:p.split('/').pop(),get:async()=>({id:p.split('/').pop(),data:()=>rd()[p]}),
+    set:async x=>{const d=rd();d[p]=JSON.parse(JSON.stringify(x));wr(d);ping()},
+    update:async x=>{const d=rd();d[p]={...(d[p]||{}),...x};wr(d);ping()},
+    delete:async()=>{const d=rd();delete d[p];wr(d);ping()}});
+  const col=p=>({get:async()=>({docs:kids(p)}),
+    add:async x=>{const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);await ref(p+'/'+id).set(x);return ref(p+'/'+id)},
+    onSnapshot:fn=>{const f=()=>fn({docs:kids(p)});subs.add(f);setTimeout(f,0);return()=>subs.delete(f)}});
+  LOCAL=true;addEventListener('storage',e=>{if(e.key===K)ping()});
+  let me;try{me=JSON.parse(localStorage.getItem(U)||'null')}catch(e){}
+  me=me||null;
+  $('#lbar').hidden=false;$('#lname').value=me?.name||'';$('#ldip').value=me?.dip||'';
+  const validDip=value=>{const d=String(value||'').toUpperCase().replace(/[-\s]/g,'');if(!/^(\d{8}[A-Z]|[XYZ]\d{7}[A-Z])$/.test(d))return false;const letters='TRWAGMYFPDXBNJZSQVHLCKE';const n=d[0]==='X'?d.replace('X','0'):d[0]==='Y'?d.replace('Y','1'):d[0]==='Z'?d.replace('Z','2'):d;return letters[parseInt(n.slice(0,-1),10)%23]===d.at(-1)};
+  $('#lgo').onclick=()=>{const n=$('#lname').value.trim(),dip=String($('#ldip').value||'').toUpperCase().replace(/[ -]/g,'');if(!n)return toast('Indica tu nombre');if(!validDip(dip))return toast('El DIP no es un DNI/NIE válido');const role=dip===PRESIDENTE_DIP?'presidencia':'aspirante';try{localStorage.setItem(U,JSON.stringify({id:dip,name:n,dip,role,verifiedAt:new Date().toISOString(),source:'RSP pendiente de conexión'}))}catch(e){}location.reload()};
+  $('#lclr').onclick=()=>{if(confirm('¿Borrar todos los datos locales de Nexe?')){try{localStorage.removeItem(K);localStorage.removeItem(U)}catch(e){}location.reload()}};
+  return {db:{collection:col,doc:ref},user:{id:async()=>me?.id||'sin-registro',canEdit:async()=>me?.role==='presidencia',isOwner:async()=>me?.dip===PRESIDENTE_DIP,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:i===me?.id?me?.name:'Miembro'}]))}};
+}
+/* ---- Importar pruebas en JSON (p. ej. generadas con IA) ---- */
+const PROMPT_IA='Genera una prueba de acceso para el ámbito «ÁMBITO» del Grupo de La Placeta. Devuelve SOLO JSON con este formato: {"preguntas":[{"tipo":"opciones","texto":"…","opciones":["A","B","C"],"correcta":1},{"tipo":"verdadero_falso","texto":"…","correcta":true},{"tipo":"texto","texto":"…","correcta":"respuesta corta"}]}. En "opciones", "correcta" es el número de la opción (empezando en 1).';
+const PREDEF={
+ atencion:{nombre:'Atención al público · test de opciones',preguntas:[
+  {tipo:'opciones',texto:'Una persona llega enfadada por un retraso. ¿Qué haces primero?',opciones:['Escucharla sin interrumpir y reconocer su malestar','Explicarle la normativa','Pedirle que vuelva otro día','Derivarla sin más'],correcta:1},
+  {tipo:'opciones',texto:'¿Qué tono es más adecuado al atender por teléfono?',opciones:['Cordial, claro y pausado','Muy rápido para ahorrar tiempo','Informal, con bromas','Seco y breve'],correcta:1},
+  {tipo:'opciones',texto:'Si no conoces la respuesta a una consulta, lo correcto es…',opciones:['Inventar una respuesta razonable','Comprometerte a informarte y responder en un plazo concreto','Decir que no es asunto tuyo','Colgar'],correcta:2}]},
+ documental:{nombre:'Gestión documental · verdadero/falso',preguntas:[
+  {tipo:'verdadero_falso',texto:'Conviene archivar los documentos con un criterio de nombres coherente.',correcta:true},
+  {tipo:'verdadero_falso',texto:'Un documento con datos personales puede dejarse a la vista sobre la mesa.',correcta:false},
+  {tipo:'verdadero_falso',texto:'Las copias de seguridad periódicas evitan pérdidas de información.',correcta:true},
+  {tipo:'verdadero_falso',texto:'Un PDF se puede editar por defecto en cualquier programa.',correcta:false}]},
+ ofimatica:{nombre:'Ofimática · respuesta corta',preguntas:[
+  {tipo:'texto',texto:'¿Qué función de una hoja de cálculo suma un rango de celdas? (una palabra)',correcta:'suma'},
+  {tipo:'texto',texto:'¿Qué extensión tiene por defecto un documento moderno de Word? (sin punto)',correcta:'docx'},
+  {tipo:'texto',texto:'¿Qué atajo copia lo seleccionado en Windows? Escríbelo como Ctrl+C',correcta:'ctrl+c'}]},
+ redaccion:{nombre:'Comunicación escrita · mixta',preguntas:[
+  {tipo:'opciones',texto:'¿Qué cierre es más adecuado en un correo formal?',opciones:['Un saludo cordial,','Chao,','Besos','Hasta luego, crack'],correcta:1},
+  {tipo:'verdadero_falso',texto:'Un correo formal debe incluir un asunto claro.',correcta:true},
+  {tipo:'texto',texto:'Completa: «Quedo a su ___ para cualquier duda» (una palabra)',correcta:'disposicion'}]}};
+async function importArr(arr,c,am){
+  if(!arr?.length||!c)return toast('No hay preguntas que importar');let n=0;
+  await w(async()=>{for(const p of arr){let op=p.opciones,k=p.correcta;
+    if(p.tipo==='verdadero_falso'){op=['Verdadero','Falso'];k=(k===true||norm(k)==='verdadero')?0:1}
+    else if(op?.length)k=typeof k==='number'?k-1:op.findIndex(o=>norm(o)===norm(k));
+    if(!p.texto||k===undefined||k===null||k===''||(op?.length&&!(k>=0&&k<op.length)))continue;
+    const qid='q'+Date.now().toString(36)+(++n);
+    await db.doc('questions/'+qid).set({convId:c,amb:am,orden:Date.now()+n,texto:String(p.texto),...(op?.length?{opciones:op.map(String)}:{})});
+    await db.doc('keys/'+qid).set({resp:k})}},'');
+  toast(n+' pregunta(s) importada(s)');
+}
+async function importJSON(){
+  let j;try{j=JSON.parse(val('g-j'))}catch(e){return toast('El JSON no es válido')}
+  const [c,am]=val('g-qs').split('|');await importArr(Array.isArray(j)?j:j.preguntas,c,am);$('#g-j').value='';
+}
+async function provisionar(c,win){
+  const orgs=(await db.collection('orgs').get()).docs,projs=(await db.collection('projects').get()).docs;
+  const an=c.area||'Grupo de La Placeta',oid=orgs.find(d=>norm(d.data().name)===norm(an))?.id||(await db.collection('orgs').add({name:an})).id;
+  const pid=projs.find(d=>d.data().orgId===oid&&norm(d.data().name)===norm(c.proyecto||c.titulo))?.id||(await db.collection('projects').add({name:c.proyecto||c.titulo,orgId:oid})).id;
+  for(const r of win){const ref=db.doc('assignments/'+r.u),cur=(await ref.get()).data()?.projectIds||[];
+    if(!cur.includes(pid))await ref.set({projectIds:[...cur,pid]});
+    await db.doc('members/'+r.u).set({name:r.v.nombre})}
+}
+/* ---- Administración ---- */
+const val=id=>document.getElementById(id)?.value??'';
+function rGest(){
+  const e=edit&&conv(edit);
+  const pairs=S.conv.flatMap(c=>(c.ambitos||[]).map(a=>[c.id+'|'+a.id,c.titulo+' · '+a.nombre]));
+  if(!qSel&&pairs.length)qSel=pairs[0][0];
+  const [qc,qa]=qSel.split('|'),qs=S.q.filter(q=>q.convId===qc&&q.amb===qa);
+  return `<article class="card"><h2>${e?'Editar convocatoria':'Nueva convocatoria'}</h2><div class="f">
+    <input type="text" id="g-t" placeholder="Título (p. ej. Administrativo/a 2027)" value="${esc(e?.titulo)}">
+    <div class="g2"><input type="text" id="g-ar" placeholder="Área" value="${esc(e?.area)}" style="margin-bottom:8px"><input type="text" id="g-p" placeholder="Proyecto" value="${esc(e?.proyecto)}"><input type="number" id="g-n" min="1" placeholder="Nº de plazas" value="${e?.plazas||''}"></div>
+    <div><label for="g-c">Fecha de cierre</label><input type="date" id="g-c" value="${esc(e?.cierre)}"></div>
+    <div><label for="g-pen">Penalización por invalidación (puntos que resta en la selección)</label><input type="number" id="g-pen" min="0" step="0.5" value="${e?.penaliza??1}"></div>
+    <div><label for="g-r">Requisitos (uno por línea)</label><textarea id="g-r" rows="3">${esc((e?.requisitos||[]).join('\n'))}</textarea></div>
+    <div><label for="g-a">Ámbitos de las pruebas (uno por línea)</label><textarea id="g-a" rows="3">${esc((e?.ambitos||[]).map(a=>a.nombre).join('\n'))}</textarea></div>
+  </div><button class="btn ok" data-act="gsave">Guardar convocatoria</button> ${e?'<button class="btn sec" data-act="gcancel">Cancelar</button>':''}</article>
+  ${S.conv.map(c=>`<article class="card"><b>${esc(c.titulo)}</b> <span class="chip ${c.estado==='abierta'?'c-ok':'c-mut'}">${c.estado}</span><div class="meta">${esc(c.proyecto)} · ${c.plazas} plaza(s) · ${esc(c.cierre||'sin cierre')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn sm sec" data-act="gedit" data-id="${c.id}">Editar</button><button class="btn sm sec" data-act="gtoggle" data-id="${c.id}">${c.estado==='abierta'?'Cerrar':'Reabrir'}</button><button class="btn sm bad" data-act="gdel" data-id="${c.id}">Eliminar</button></div></article>`).join('')}
+  <article class="card"><h2>Banco de preguntas</h2>${pairs.length?`<div class="f"><select id="g-qs" aria-label="Convocatoria y ámbito">${pairs.map(([v,t])=>`<option value="${esc(v)}" ${v===qSel?'selected':''}>${esc(t)}</option>`).join('')}</select>
+    <textarea id="g-qt" rows="2" placeholder="Enunciado de la pregunta"></textarea>
+    <textarea id="g-qo" rows="3" placeholder="Opciones, una por línea (vacío = respuesta corta)"></textarea>
+    <input type="text" id="g-qk" placeholder="Correcta: nº de opción (1, 2…) o texto de la respuesta corta"></div><button class="btn ok" data-act="qadd">Añadir pregunta</button>
+    <h3>Pruebas predefinidas</h3><div class="f"><select id="g-pre" aria-label="Prueba predefinida">${Object.entries(PREDEF).map(([k,v])=>`<option value="${k}">${esc(v.nombre)}</option>`).join('')}</select><div><button class="btn" data-act="qpre">Cargar en el ámbito seleccionado</button></div></div>
+    <h3>Importar pruebas (JSON)</h3><textarea id="g-j" rows="5" placeholder='{"preguntas":[{"tipo":"opciones","texto":"…","opciones":["A","B"],"correcta":1}]}'></textarea>
+    <div style="margin-top:8px"><button class="btn" data-act="qimp">Importar en el ámbito seleccionado</button></div>
+    <details style="margin-top:8px"><summary class="meta">Prompt para generar la prueba con una IA</summary><pre class="p">${esc(PROMPT_IA)}</pre></details>`:'<div class="meta">Crea primero una convocatoria con ámbitos.</div>'}
+    ${qs.map(q=>`<div class="row"><span>${esc(q.texto)} <span class="meta">${q.opciones?.length?q.opciones.length+' opciones':'resp. corta'}</span></span><button class="btn sm bad" data-act="qdel" data-id="${q.id}">Eliminar</button></div>`).join('')}</article>`;
+}
+document.addEventListener('change',e=>{if(e.target.id==='g-qs'){qSel=e.target.value;render()}
+  const mi=e.target.closest('[data-mer]');if(mi&&isAdmin){const [u,c]=mi.dataset.mer.split('|'),p=parseFloat(mi.value)||0;
+    w(async()=>{await db.doc(`notas/${u}/mer/${c}`).set({pts:p});const v=ADM[u],o=v.mer.find(x=>x.id===c);o?o.pts=p:v.mer.push({id:c,pts:p});selRender()},'Méritos guardados')}});
+async function adminAct(act,id,a){
+  const now=new Date().toISOString();
+  if(act==='gsave'){const t=val('g-t').trim(),n=parseInt(val('g-n'))||0;if(!t||n<1)return toast('Indica título y número de plazas');
+    const amb=lines(val('g-a')).map(x=>({id:slug(x),nombre:x}));if(!amb.length)return toast('Añade al menos un ámbito');
+    const prev=edit&&conv(edit),cid=edit||'c'+Date.now().toString(36);
+    await w(()=>db.doc('convocatorias/'+cid).set({titulo:t,area:val('g-ar').trim(),proyecto:val('g-p').trim(),plazas:n,cierre:val('g-c'),penaliza:Math.max(0,parseFloat(val('g-pen'))||0),requisitos:lines(val('g-r')),ambitos:amb,estado:prev?.estado||'abierta',creada:prev?.creada||now}),'Convocatoria guardada');edit=null;render()}
+  else if(act==='gedit'){edit=id;render();scrollTo(0,0)}
+  else if(act==='gcancel'){edit=null;render()}
+  else if(act==='gtoggle'){const c=conv(id);w(()=>db.doc('convocatorias/'+id).update({estado:c.estado==='abierta'?'cerrada':'abierta'}))}
+  else if(act==='gdel'){if(!confirm('¿Eliminar la convocatoria? Se conservan los expedientes ya generados.'))return;w(()=>db.doc('convocatorias/'+id).delete(),'Eliminada')}
+  else if(act==='qadd'){const [c,am]=val('g-qs').split('|'),t=val('g-qt').trim(),op=lines(val('g-qo')),k=val('g-qk').trim();if(!t||!k)return toast('Indica enunciado y respuesta correcta');
+    let key=k;if(op.length){const i=parseInt(k)-1;if(!(i>=0&&i<op.length))return toast('La correcta debe ser un nº entre 1 y '+op.length);key=i}
+    const qid='q'+Date.now().toString(36);
+    await w(async()=>{await db.doc('questions/'+qid).set({convId:c,amb:am,orden:Date.now(),texto:t,...(op.length?{opciones:op}:{})});await db.doc('keys/'+qid).set({resp:key})},'Pregunta añadida');$('#g-qt').value=$('#g-qo').value=$('#g-qk').value=''}
+  else if(act==='qdel')w(async()=>{await db.doc('questions/'+id).delete();await db.doc('keys/'+id).delete()},'Pregunta eliminada');
+  else if(act==='qimp')importJSON();
+  else if(act==='qpre'){const [c,am]=val('g-qs').split('|');importArr(PREDEF[val('g-pre')].preguntas,c,am)}
+  else if(act==='sload'){ADM=null;render()}
+  else if(act==='scorr'){await autocorregir();ADM=null;render()}
+  else if(act==='sclear'){await w(()=>db.doc(`aspirantes/${a.dataset.u}/intentos/${id}`).delete(),'Invalidación anulada: puede repetir la prueba');ADM=null;render()}
+  else if(act==='sadj')adjudicar();
+  else if(act==='tosel'){selC=id;view='sel';render()}
+}
+async function loadAll(){
+  const g=async p=>(await db.collection(p).get()).docs.map(d=>({id:d.id,...d.data()})),out={};
+  await Promise.all((await db.collection('aspirantes').get()).docs.map(async a=>{const i=a.id;
+    const [insc,int,notas,mer,res]=await Promise.all([g(`aspirantes/${i}/inscripciones`),g(`aspirantes/${i}/intentos`),g(`notas/${i}/r`),g(`notas/${i}/mer`),g(`notas/${i}/res`)]);
+    out[i]={nombre:a.data().nombre||'Aspirante',insc,int,notas,mer,res}}));
+  ADM=out;
+}
+function ranking(c){
+  const pen=c.penaliza??1;
+  return Object.entries(ADM).filter(([,v])=>v.insc.some(i=>i.id===c.id)).map(([u,v])=>{
+    const ints=v.int.filter(i=>i.convId===c.id),inv=ints.filter(i=>i.estado==='invalidado'),sent=ints.filter(i=>i.estado==='enviado'),nt=v.notas.filter(n=>n.convId===c.id),sa=new Set(sent.map(i=>i.amb));
+    const nota=nt.reduce((x,n)=>x+n.nota,0),max=nt.reduce((x,n)=>x+n.max,0),mer=v.mer.find(m=>m.id===c.id)?.pts||0,p=pen*inv.length;
+    return {u,v,ints,inv,pend:sent.length-nt.length,faltan:(c.ambitos||[]).filter(a=>!sa.has(a.id)).length,nota,max,mer,pen:p,total:nota+mer-p,res:v.res.find(r=>r.id===c.id)?.estado}
+  }).sort((a,b)=>b.total-a.total);
+}
+function selRender(){
+  const m=$('#m');if(view!=='sel')return;
+  if(!selC||!conv(selC))selC=S.conv[0]?.id||null;
+  if(!selC)return m.innerHTML='<div class="empty">Aún no hay convocatorias. Créalas en Gestionar.</div>';
+  if(!ADM){m.innerHTML='<div class="empty">Cargando expedientes…</div>';loadAll().then(selRender).catch(e=>{m.innerHTML='<div class="empty">No se pudieron cargar los expedientes.</div>';console.error(e)});return}
+  const c=conv(selC),rk=ranking(c);
+  m.innerHTML=`<div class="f"><select id="sel-c" aria-label="Convocatoria">${S.conv.map(x=>`<option value="${x.id}" ${x.id===selC?'selected':''}>${esc(x.titulo)}</option>`).join('')}</select></div>
+  <div class="meta" style="margin-bottom:8px">${rk.filter(r=>r.res==='plaza').length} de ${c.plazas} plazas adjudicadas${c.plazas>rk.filter(r=>r.res==='plaza').length?' · '+(c.plazas-rk.filter(r=>r.res==='plaza').length)+' pendiente(s)':''}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><button class="btn sm sec" data-act="sload">Actualizar</button><button class="btn sm sec" data-act="scorr">Corregir pendientes</button>${isPres?`<button class="btn sm ok" data-act="sadj">Adjudicar plazas</button>`:''}</div>
+  ${rk.length?`<article class="card tw"><table><thead><tr><th>Aspirante</th><th>Pruebas</th><th>Méritos</th><th>Total</th><th>Resolución</th></tr></thead><tbody>${rk.map((r,i)=>`<tr><td><b>${i+1}. ${esc(r.v.nombre)}</b><details><summary class="meta">Expediente</summary>${r.ints.map(t=>{const a=(c.ambitos||[]).find(x=>x.id===t.amb),n=r.v.notas.find(x=>x.id===t.id);
+      return `<div class="meta">${esc(a?.nombre||t.amb)} · ${fdate(t.at)} · ${t.estado==='invalidado'?'<b style="color:var(--red)">Invalidada: '+esc(t.motivo)+'</b> <button class="btn sm bad" data-act="sclear" data-id="'+t.id+'" data-u="'+r.u+'">Anular</button>':n?'Nota '+n.nota+'/'+n.max:'Pendiente'}</div>`}).join('')||'<div class="meta">Sin pruebas realizadas</div>'}</details></td>
+    <td>${r.nota}/${r.max}<div class="meta">${r.pend?r.pend+' pend. · ':''}${r.inv.length?r.inv.length+' invalid. (−'+r.pen+') · ':''}${r.faltan>0?r.faltan+' sin hacer':''}</div></td>
+    <td><input type="number" step="0.5" data-mer="${r.u}|${c.id}" value="${r.mer}" style="width:80px" aria-label="Méritos"></td><td><b>${r.total}</b></td>
+    <td>${r.res?`<span class="chip ${RES[r.res][1]}">${RES[r.res][0]}</span>`:'<span class="meta">—</span>'}</td></tr>`).join('')}</tbody></table></article>`:'<div class="empty">Nadie inscrito en esta convocatoria.</div>'}`;
+  $('#sel-c').onchange=e=>{selC=e.target.value;selRender()};
+}
+async function adjudicar(){
+  if(!isPres)return toast('Solo la presidencia puede adjudicar plazas');
+  const c=conv(selC),rk=ranking(c);if(!rk.length)return toast('No hay aspirantes inscritos');
+  if(rk.some(r=>r.pend>0))return toast('Hay pruebas sin corregir: pulsa «Corregir pendientes»');
+  const fijos=rk.filter(r=>r.res==='plaza').length,libres=rk.filter(r=>r.res!=='plaza'),quedan=Math.max(0,c.plazas-fijos);
+  if(!quedan)return toast('Todas las plazas ya están adjudicadas');
+  if(!libres.length)return toast('No hay aspirantes sin plaza a quienes adjudicar');
+  const asig=Math.min(quedan,libres.length),vac=quedan-asig,inc=libres.filter(r=>r.faltan>0).length;
+  if(!confirm(`Se adjudicarán ${asig} plaza(s) por puntuación (con penalizaciones).${vac?` Como hay menos aspirantes que plazas, ${vac} plaza(s) quedarán pendientes.`:' El resto quedará en reserva.'} ${inc?inc+' aspirante(s) con pruebas sin completar puntúan 0 en ellas. ':''}¿Continuar?`))return;
+  let n=0;
+  await w(async()=>{for(const r of libres)await db.doc(`notas/${r.u}/res/${c.id}`).set({estado:n++<asig?'plaza':'reserva',total:r.total,at:new Date().toISOString()});
+    await provisionar(c,libres.slice(0,asig));await db.doc('convocatorias/'+c.id).update({adjudicadas:fijos+asig})},'Resolución publicada'+(vac?` · ${vac} plaza(s) pendiente(s)`:''));
+  ADM=null;render();
+}
+
+/* ---- Autocorrección automática (activa mientras una sesión de administración tiene Atrio abierta) ---- */
+let KEYS=null,QS=null,KT=0;const graded=new Set();
+async function loadKeys(){if(KEYS&&Date.now()-KT<30000)return;KEYS={};QS={};
+  (await db.collection('keys').get()).docs.forEach(d=>KEYS[d.id]=d.data().resp);(await db.collection('questions').get()).docs.forEach(d=>QS[d.id]=d.data());KT=Date.now()}
+async function gradeIntento(u,id,i){
+  if(graded.has(id))return false;graded.add(id);
+  try{await loadKeys();let ok=0,max=0;
+    Object.entries(i.respuestas||{}).forEach(([qid,v])=>{if(!(qid in KEYS))return;max++;const q=QS[qid],k=KEYS[qid];if(q?.opciones?.length?String(v)===String(k):norm(v)===norm(k))ok++});
+    await db.doc(`notas/${u}/r/${id}`).set({nota:ok,max,at:new Date().toISOString(),convId:i.convId,amb:i.amb});return true}
+  catch(e){graded.delete(id);console.error(e);return false}
+}
+function watchAuto(){
+  const seen=new Set();
+  db.collection('aspirantes').onSnapshot(s=>s.docs.forEach(a=>{if(seen.has(a.id))return;seen.add(a.id);const notas=new Set();
+    db.collection(`notas/${a.id}/r`).onSnapshot(ns=>ns.docs.forEach(d=>notas.add(d.id)));
+    db.collection(`aspirantes/${a.id}/intentos`).onSnapshot(is=>is.docs.forEach(d=>{const i=d.data();
+      if(i.estado==='enviado')setTimeout(async()=>{if(!notas.has(d.id)&&await gradeIntento(a.id,d.id,i))toast('Prueba autocorregida')},700)}))}));
+}
+async function autocorregir(){
+  if(!isAdmin)return;if(!ADM)await loadAll();let n=0;
+  for(const [u,v] of Object.entries(ADM))for(const i of v.int)if(i.estado==='enviado'&&!v.notas.some(x=>x.id===i.id)&&await gradeIntento(u,i.id,i))n++;
+  toast(n?n+' prueba(s) corregida(s)':'No hay pruebas pendientes');
+}
+/* ---- Panel de presidencia ---- */
+function presRender(){
+  const m=$('#m');if(view!=='pres')return;
+  if(!ADM){m.innerHTML='<div class="empty">Cargando datos del sistema…</div>';loadAll().then(presRender).catch(e=>console.error(e));return}
+  const rows=S.conv.map(c=>{const rk=ranking(c);return {c,ins:rk.length,done:rk.filter(r=>r.faltan===0).length,inv:rk.reduce((x,r)=>x+r.inv.length,0),pend:rk.reduce((x,r)=>x+r.pend,0),adj:rk.filter(r=>r.res==='plaza').length}});
+  const T=k=>rows.reduce((x,r)=>x+r[k],0),ab=S.conv.filter(c=>c.estado==='abierta').length,pl=S.conv.reduce((x,c)=>x+(c.plazas||0),0);
+  const rec=Object.values(ADM).flatMap(v=>v.int.filter(i=>i.estado==='invalidado').map(i=>({n:v.nombre,...i}))).sort((a,b)=>String(b.at).localeCompare(a.at)).slice(0,8);
+  const K=(n,l)=>`<div class="kpi"><b>${n}</b><span class="meta">${l}</span></div>`;
+  m.innerHTML=`<div class="kpis">${K(ab,'convocatorias abiertas')}${K(T('ins'),'inscripciones')}${K(T('pend'),'pruebas sin corregir')}${K(T('inv'),'invalidaciones')}${K(T('adj')+'/'+pl,'plazas adjudicadas')}</div>
+  <article class="card tw"><h2>Convocatorias</h2>${rows.length?`<table><thead><tr><th>Convocatoria</th><th>Inscritos</th><th>Completos</th><th>Invalid.</th><th>Plazas</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.c.titulo)}</b><div class="meta">${esc(r.c.proyecto)} · <span class="chip ${r.c.estado==='abierta'?'c-ok':'c-mut'}">${r.c.estado}</span></div></td><td>${r.ins}</td><td>${r.done}</td><td>${r.inv}</td><td>${r.adj}/${r.c.plazas}</td>
+  <td><button class="btn sm sec" data-act="tosel" data-id="${r.c.id}">Selección</button> <button class="btn sm sec" data-act="gtoggle" data-id="${r.c.id}">${r.c.estado==='abierta'?'Cerrar':'Reabrir'}</button></td></tr>`).join('')}</tbody></table>`:'<div class="meta">Sin convocatorias.</div>'}</article>
+  <article class="card"><h2>Invalidaciones recientes</h2>${rec.length?rec.map(r=>`<div class="row"><span><b>${esc(r.n)}</b> <span class="meta">${esc(conv(r.convId)?.titulo||'')} · ${fdate(r.at)}</span></span><span class="chip c-bad">${esc(r.motivo)}</span></div>`).join(''):'<div class="meta">Ninguna.</div>'}</article>
+  <button class="btn sec" data-act="sload">Actualizar datos</button>`;
+}
+
+async function seed(){
+  const cid='c2027-ejemplo',id=n=>cid+'_'+n;
+  await w(async()=>{
+    await db.doc('convocatorias/'+cid).set({titulo:'Administrativo/a · Convocatoria de ejemplo',proyecto:'Proyecto de ejemplo',plazas:2,estado:'abierta',cierre:'2027-12-31',creada:new Date().toISOString(),requisitos:['Mayor de 18 años','Disponibilidad para trabajar en el proyecto'],ambitos:[{id:'atencion',nombre:'Atención al público'},{id:'gestion',nombre:'Gestión documental'}]});
+    const Q=[['atencion',1,'¿Cuál es la primera actitud al atender a una persona que llega con una queja?',['Escuchar sin interrumpir','Derivarla a otro compañero','Explicar el reglamento'],0],
+      ['atencion',2,'Escribe una palabra: ¿qué valor es clave al tratar con el público? (respeto)',null,'respeto'],
+      ['gestion',1,'¿Qué debe llevar toda factura registrada?',['Fecha y número','Solo el importe','Solo el nombre'],0],
+      ['gestion',2,'¿En qué formato se archiva un documento para conservarlo de forma estable? (pdf)',null,'pdf']];
+    for(const [amb,o,t,op,k] of Q){const qid=id(amb+o);
+      await db.doc('questions/'+qid).set({convId:cid,amb,orden:o,texto:t,...(op?{opciones:op}:{})});
+      await db.doc('keys/'+qid).set({resp:k})}
+  },'Convocatoria de ejemplo cargada');
+}
+
+(async()=>{
+  try{if(MODO!=='local'){db=await window.claude?.use('db');user=await window.claude?.use('user')}}catch(e){}
+  if(!db||!user){
+    db=null;user=null;$('#lbar').hidden=true;
+    const boot=$('#boot');if(boot)boot.innerHTML='<b>Nexe necesita sesión de producción.</b><br>Accede con tu identidad PlacetaID v27 para continuar.<br><a class="btn ok" href="/api/placetaid-login" style="display:inline-block;margin-top:12px;text-decoration:none">Entrar con PlacetaID v27</a>';
+    return;
+  }
+  uid=await user.id();isAdmin=await user.canEdit();isPres=await user.isOwner();
+  try{const p=await user.profiles([uid]);await db.doc('aspirantes/'+uid).set({nombre:p[uid]?.name||'Aspirante'})}catch(e){}
+  const sub=(path,key)=>db.collection(path).onSnapshot(s=>{S[key]=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>console.error(e));
+  sub('convocatorias','conv');sub('questions','q');sub(`aspirantes/${uid}/inscripciones`,'insc');sub(`aspirantes/${uid}/intentos`,'int');sub(`notas/${uid}/r`,'notas');sub(`notas/${uid}/res`,'res');
+  if(isAdmin)$('#nav').insertAdjacentHTML('beforeend','<button data-v="gest">Gestionar</button><button data-v="sel">Selección</button>'+(isPres?'<button data-v="pres">Presidencia</button>':''));
+  render();if(isAdmin)watchAuto();
+})();
+</script>
+</body>
+</html>
