@@ -43,6 +43,8 @@ function sendCallbackMessage(res, status, title, message, retry = true) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#14312D">
+    <link rel="icon" type="image/png" href="/nexe-favi.png">
     <title>${title} · Nexe</title>
     <style>
       *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#f5f3f8;color:#24212b;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -53,7 +55,7 @@ function sendCallbackMessage(res, status, title, message, retry = true) {
       @media(max-width:480px){main{padding:24px;border-radius:16px}h1{font-size:21px}}
     </style>
   </head>
-  <body><main><div class="mark" aria-hidden="true">N</div><h1>${title}</h1><p>${message}</p>${retry ? '<a class="action" href="/api/placetaid-login">Volver a intentarlo</a>' : ''}</main></body>
+  <body><main><img class="mark" src="/nexe-favi.png" alt="" width="46" height="46"><h1>${title}</h1><p>${message}</p>${retry ? '<a class="action" href="/api/placetaid-login">Volver a intentarlo</a>' : ''}</main></body>
 </html>`);
 }
 
@@ -66,11 +68,13 @@ function sendRegistrationPage(res, suggestedName) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#14312D">
+    <link rel="icon" type="image/png" href="/nexe-favi.png">
     <title>Crear cuenta · Nexe</title>
     <style>
       *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#f5f3f8;color:#24212b;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
       main{width:min(100%,520px);padding:clamp(22px,6vw,36px);border:1px solid #e8e3ed;border-radius:20px;background:#fff;box-shadow:0 18px 50px #27143b12}
-      .mark{display:grid;place-items:center;width:46px;height:46px;margin-bottom:20px;border-radius:14px;background:#f0eafb;color:#6639a4;font-size:23px;font-weight:700}
+      .mark{display:block;width:46px;height:46px;margin-bottom:20px;border-radius:14px}
       h1{margin:0 0 10px;font-size:25px;line-height:1.2;letter-spacing:-.4px}p{color:#5f5967}
       label{display:block;margin:18px 0 8px;font-weight:600}input[type=text]{width:100%;padding:12px;border:1px solid #d8d2df;border-radius:10px;font:inherit}
       .accept{display:flex;align-items:flex-start;gap:10px;margin:18px 0;font-size:14px;font-weight:400}.accept input{width:18px;height:18px;margin:2px 0 0;flex:none}
@@ -80,7 +84,7 @@ function sendRegistrationPage(res, suggestedName) {
     </style>
   </head>
   <body><main>
-    <div class="mark" aria-hidden="true">N</div>
+    <img class="mark" src="/nexe-favi.png" alt="" width="46" height="46">
     <h1>Crear tu cuenta de Nexe</h1>
     <p>PlacetaID ha verificado tu identidad. No encontramos una cuenta de Nexe asociada. Revisa los textos legales y confirma para crearla y continuar.</p>
     <form id="registerForm" method="post" action="/api/placetaid-register">

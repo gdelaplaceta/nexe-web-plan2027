@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nexe · Acceso a convocatorias</title>
+<meta name="theme-color" content="#14312D">
+<link rel="icon" type="image/png" sizes="1024x1024" href="/nexe-favi.png">
+<link rel="apple-touch-icon" href="/nexe-favi.png">
+<link rel="preload" as="image" href="/nexe-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F2F4F0;--card:#fff;--ink:#14312D;--mut:#5F716D;--line:#D9DFDA;--coin:#F0B429;--coinink:#4A3500;--red:#C23B2E;--ok:#2F7D5B;--blue:#2B5E8C;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -12,8 +16,12 @@
 [hidden]{display:none!important}*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
 header{background:#14312D;color:#E6EEEB;padding:14px clamp(14px,4vw,40px);display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between}
-header h1{margin:0;font-size:22px;font-weight:800;line-height:1}header small{display:block;font-weight:400;font-size:12px;opacity:.75;margin-top:4px}
+header .brand{display:flex;align-items:center;gap:12px;min-width:0}
+header .brand-logo{display:block;width:clamp(190px,25vw,280px);height:auto;max-height:62px;object-fit:contain;padding:5px 10px;border-radius:10px;background:#fff}
+header h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+header small{display:block;font-weight:400;font-size:12px;opacity:.75;margin-top:4px}
 #nav{display:flex;gap:4px}#nav button{background:none;border:0;color:inherit;padding:8px 14px;border-radius:6px;cursor:pointer;font:inherit;font-weight:600;opacity:.8;min-height:40px}#nav button.on{background:var(--coin);color:var(--coinink);opacity:1}
+@media(max-width:600px){header .brand{flex:1 1 100%;justify-content:center}header .brand-logo{width:min(72vw,250px);max-height:54px}#nav{justify-content:center}}
 main{max-width:860px;margin:0 auto;padding:18px clamp(14px,4vw,24px) 40px}
 input,button,textarea{font:inherit;color:inherit}
 input[type=text],textarea{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;font-size:16px}
@@ -138,7 +146,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
 </style>
 </head>
 <body>
-<header><div><h1>Nexe<small>Convocatorias, pruebas y expedientes · Grupo de La Placeta</small></h1></div>
+<header><div class="brand"><h1>Nexe · Convocatorias, pruebas y expedientes · Grupo de La Placeta</h1><img class="brand-logo" src="/nexe-logo.png" alt="Nexe · Administración del Grupo de La Placeta" width="669" height="227"></div>
 <nav id="nav"><button data-v="conv" class="on">Convocatorias</button><button data-v="exp">Mi expediente</button></nav></header>
 <div id="lbar" hidden><b>Nexe</b><span>Identidad local de demostración ·</span><input type="text" id="lname" placeholder="Nombre" aria-label="Nombre"><input type="text" id="ldip" placeholder="DIP (DNI/NIE)" aria-label="DIP" maxlength="9" autocomplete="off"><button class="btn" id="lgo">Entrar / registrarme</button><button class="btn sec" id="lclr">Borrar datos</button></div>
 <template id="gtpl">
