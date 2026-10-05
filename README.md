@@ -21,9 +21,9 @@ y solo permite el acceso si existe un perfil activo.
 2. Registra en `public.nexe_profiles` cada cuenta autorizada con su DIP validado,
    nombre, rol y `activo = true`. No se crean ni activan perfiles durante el
    callback OAuth.
-3. Configura `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` en las variables de entorno
-   de producción de Vercel. La clave debe ser una clave de servidor y nunca debe
-   exponerse al navegador.
+3. Configura `SUPABASE_URL` y `SUPABASE_SECRET_KEY` en las variables de entorno
+   de producción de Vercel. El servidor usa esta clave para consultar perfiles
+   aunque el inicio de sesión venga de PlacetaID; nunca la expongas al navegador.
 
 Las rutas API usan una cookie de sesión propia de Nexe. Las consultas de registros
 se filtran por el perfil autenticado; presidencia puede consultar los registros
@@ -37,4 +37,5 @@ perfil o está inactivo, el acceso se deniega en lugar de crear una cuenta
 automáticamente. La maqueta HTML aún espera el adaptador anfitrión
 `window.claude.use('db')` / `window.claude.use('user')`; el despliegue debe
 proporcionar ese adaptador o conectar esa UI a las rutas API antes de usar sus
-funciones de datos. No se debe publicar `SUPABASE_SERVICE_KEY`.
+funciones de datos. `SUPABASE_SECRET_KEY` solo debe usarse en el servidor; la
+clave publishable/anon no la sustituye en estas rutas.

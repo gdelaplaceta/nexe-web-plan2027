@@ -158,7 +158,7 @@ export default async function handler(req, res) {
         res,
         503,
         'Falta configurar Supabase en Nexe',
-        'La administración debe configurar SUPABASE_URL y SUPABASE_SERVICE_KEY en las variables de entorno de producción.',
+        'La administración debe configurar SUPABASE_URL y SUPABASE_SECRET_KEY en las variables de entorno de producción.',
         false,
       );
     }

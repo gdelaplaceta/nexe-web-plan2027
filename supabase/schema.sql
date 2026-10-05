@@ -1,5 +1,5 @@
 -- Nexe · modelo de datos para sesiones PlacetaID gestionadas por el servidor.
--- SUPABASE_SERVICE_KEY debe permanecer exclusivamente en el servidor.
+-- SUPABASE_SECRET_KEY debe permanecer exclusivamente en el servidor.
 create extension if not exists pgcrypto;
 
 do $$ begin
