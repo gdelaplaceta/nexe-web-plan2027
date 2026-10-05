@@ -48,6 +48,9 @@ select{background:var(--card);border:1px solid var(--line);border-radius:6px;pad
 .btn.sm{padding:5px 10px;min-height:34px;font-size:13px}.btn.bad{background:none;color:var(--red);border:1px solid var(--red)}
 a.btn{display:inline-block;text-decoration:none;line-height:24px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}.kpi b{display:block;font-size:30px;line-height:1.1}
+.payroll-toolbar,.payroll-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.payroll-toolbar .f{min-width:170px;flex:1;margin:0}.payroll-toolbar .btn{flex:none}
+.payroll-config{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.payroll-config .f{margin:0}.payroll-config .check{display:flex;gap:8px;align-items:center;padding:8px 0}.payroll-config .check input{width:20px;height:20px;flex:none}
+.payroll-breakdown{margin:8px 0 0 18px}.payroll-breakdown li{padding:2px 0}.payroll-period{white-space:nowrap}.payroll-total{font-weight:800}.payroll-info{margin:8px 0 14px}
 #lbar{background:var(--coin);color:var(--coinink);padding:8px clamp(14px,4vw,40px);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}#lbar input,#lbar select{width:auto;min-height:34px;padding:4px 8px;font-size:14px}#lbar .btn{min-height:34px;padding:4px 12px}
 .session-user{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:999px;font-size:12px}
 pre.p{white-space:pre-wrap;font-size:12px;background:var(--bg);padding:8px;border-radius:6px}
@@ -454,7 +457,11 @@ const open_=c=>c.estado==='abierta'&&(!c.cierre||c.cierre>=new Date().toISOStrin
 
 document.addEventListener('click',e=>{
   const v=e.target.closest('[data-v]');if(v&&!run){view=v.dataset.v;convSel=null;render();return}
+  const payrollPeriod=e.target.closest('[data-payroll-period]');
+  if(payrollPeriod){void loadPayroll(payrollPeriod.dataset.payrollPeriod,true);return}
   const a=e.target.closest('[data-act]');if(!a||!db)return;const act=a.dataset.act,id=a.dataset.id;
+  if(act==='payroll-refresh'){void loadPayroll($('#payroll-period')?.value||'',true);return}
+  if(act==='payroll-config-save'){void savePayrollConfig(a);return}
   if(act==='insc'){if(!$('#chk-'+id)?.checked)return toast('Marca la declaración de requisitos');
     w(()=>db.doc(`aspirantes/${uid}/inscripciones/${id}`).set({convId:id,at:new Date().toISOString()}),'Inscripción registrada')}
   else if(act==='pruebas'){convSel=id;view='conv';render()}
@@ -463,6 +470,12 @@ document.addEventListener('click',e=>{
   else if(act==='submit')submitRun();
   else if(act==='seed')seed();
   else if(isAdmin)adminAct(act,id,a);
+});
+document.addEventListener('submit',e=>{
+  if(e.target?.id!=='payrollConfigForm')return;
+  e.preventDefault();
+  const button=e.target.querySelector('button[type="submit"]');
+  if(button)void savePayrollConfig(button);
 });
 
 function intentosDe(cid,aid){return S.int.filter(i=>i.convId===cid&&i.amb===aid)}
@@ -475,10 +488,132 @@ function estadoAmb(cid,aid){
 }
 const RES={plaza:['¡Plaza adjudicada!','c-ok'],reserva:['Lista de reserva','c-wait'],excluida:['Excluido/a del proceso','c-bad']};
 const gestor=cid=>S.res.find(x=>x.id===cid)?.estado==='plaza'?`<div class="card" style="background:rgba(47,125,91,.1);border-color:var(--ok)"><b>Tienes plaza.</b> Ya puedes acceder al gestor de tareas del Grupo de La Placeta.<div style="margin-top:8px"><button class="btn ok" data-v="tareas">Abrir gestor de tareas</button></div></div>`:'';
-async function rNominas(){const m=$('#m');m.innerHTML='<article class="card"><h2>Nóminas y complementos de actividad</h2><p class="meta">Las tareas aprobadas se incorporan como complementos de actividad. Nexe prepara la nómina y la envía al Banco de La Placeta con los IBAN configurados en ambas partes.</p><div id="payrollState" class="empty">Cargando estado…</div></article>';try{const r=await fetch('/api/banco-nominas?action=estado');const d=await r.json();if(!r.ok)throw new Error(d.error||'request_failed');$('#payrollState').innerHTML=`<div class="kpis"><div class="kpi"><b>${d.periodos?.length||0}</b><span class="meta">nóminas</span></div><div class="kpi"><b>${d.contratos?.length||0}</b><span class="meta">contratos</span></div></div><p class="meta">La emisión requiere IBAN de origen y destino, autorización y trazabilidad del Banco.</p>`}catch(e){const message={bank_not_configured:'Falta configurar BANCO_CRM_KEY en Vercel con la misma clave privada CRM_READ_KEY del Banco. BANCO_NOMINAS_URL es opcional.',bank_url_invalid:'La URL del servicio de nóminas en Vercel no es válida.',bank_unreachable:'Nexe no puede conectar con la API del Banco. Revisa los logs de la función banco-nominas en Vercel.',invalid_crm_key:'El Banco rechazó la clave CRM: configura la misma clave privada CRM_READ_KEY del Banco como BANCO_CRM_KEY en Nexe.',session_unavailable:'No se pudo comprobar tu sesión en Supabase. Revisa la configuración y los logs de Nexe en Vercel.',supabase_not_configured:'Falta configurar Supabase en las variables de entorno de Nexe.',missing_session:'Tu sesión ha caducado. Vuelve a entrar con PlacetaID.',invalid_session:'Tu sesión no es válida. Vuelve a entrar con PlacetaID.',forbidden:'Tu cuenta no tiene permiso para consultar nóminas.'}[e.message]||'No se pudo consultar el servicio de nóminas. Inténtalo más tarde.';const state=$('#payrollState');state.className='warn';state.textContent=message}}
+let payrollRendered=false;
+const payrollCache={period:'',data:null,error:null,request:null};
+const pz=value=>`${new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(value)||0)} Pz`;
+const payrollErrors={
+  bank_not_configured:'Falta configurar la clave CRM del Banco en Vercel.',
+  bank_url_invalid:'La URL del servicio de nóminas en Vercel no es válida.',
+  bank_unreachable:'Nexe no puede conectar con la API del Banco. Revisa los logs de la función en Vercel.',
+  bank_timeout:'El Banco tardó demasiado en responder. Revisa los logs de la API de nóminas del Banco.',
+  invalid_crm_key:'El Banco rechazó la clave CRM configurada en Nexe.',
+  session_unavailable:'No se pudo comprobar tu sesión en Supabase.',
+  supabase_not_configured:'Falta configurar Supabase en las variables de entorno de Nexe.',
+  missing_session:'Tu sesión ha caducado. Vuelve a entrar con PlacetaID.',
+  invalid_session:'Tu sesión no es válida. Vuelve a entrar con PlacetaID.',
+  forbidden:'Tu cuenta no tiene permiso para esta operación.',
+  database_error:'El Banco no pudo consultar sus datos. Revisa la conexión con la base de datos.'
+};
+function payrollError(error){return payrollErrors[error?.message]||'No se pudieron cargar las nóminas. Inténtalo de nuevo manualmente.'}
+function payrollConfigForm(config={}){
+  const ial=config.ial||{};
+  return `<article class="card"><h3>Configuración global</h3><p class="meta">Estos parámetros se guardan en el Banco y afectan a los siguientes cálculos. Los cambios de pagos automáticos pueden iniciar transferencias al vencer el plazo.</p><form id="payrollConfigForm"><div class="payroll-config">
+    <div class="f"><label for="payroll-cutoff">Día de cierre (1–28)</label><input id="payroll-cutoff" name="cutoffDay" type="number" min="1" max="28" required value="${esc(config.cutoffDay??25)}"></div>
+    <div class="f"><label for="payroll-retention">Retención del trabajador (%)</label><input id="payroll-retention" name="retencionPct" type="number" min="0" max="35" step="0.01" required value="${esc(config.retencionPct??12)}"></div>
+    <div class="f"><label for="payroll-smi">SMI mensual (Pz)</label><input id="payroll-smi" name="smiMensualPz" type="number" min="0" step="0.01" required value="${esc(config.smiMensualPz??150)}"></div>
+    <label class="check"><input name="activo" type="checkbox"${config.activo!==false?' checked':''}> Nóminas activas</label>
+    <label class="check"><input name="autoPago" type="checkbox"${config.autoPago!==false?' checked':''}> Pago automático al cierre</label>
+  </div><h3>Desglose IAL (%)</h3><div class="payroll-config">
+    <div class="f"><label>IAL empleador</label><input name="ial.empleadorPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.empleadorPct??12)}"></div>
+    <div class="f"><label>IAL trabajador</label><input name="ial.trabajadorPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.trabajadorPct??12)}"></div>
+    <div class="f"><label>Empleador · valorización</label><input name="ial.empleadorValorizacionPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.empleadorValorizacionPct??6)}"></div>
+    <div class="f"><label>Empleador · Banco</label><input name="ial.empleadorBancoPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.empleadorBancoPct??6)}"></div>
+    <div class="f"><label>Trabajador · antigüedad</label><input name="ial.trabajadorAntiguedadPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.trabajadorAntiguedadPct??6)}"></div>
+    <div class="f"><label>Trabajador · Banco</label><input name="ial.trabajadorBancoPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.trabajadorBancoPct??6)}"></div>
+  </div><div class="payroll-actions" style="margin-top:12px"><button class="btn ok" type="submit">Guardar configuración</button></div></form></article>`;
+}
+function payrollDetails(data){
+  const summaries=data.resumenes||[];
+  if(!summaries.length)return '<div class="empty">No hay contratos ni nóminas para este periodo.</div>';
+  return summaries.map(item=>{
+    const contract=item.contrato||{};
+    const period=item.periodoDoc||item;
+    const lines=period.lineas||item.lineas||[];
+    const ial=period.ial||item.ial||{};
+    const employer=ial.empleador||{},employee=ial.trabajador||{};
+    return `<article class="card"><details><summary><strong>${esc(contract.employeeName||contract.employeeDip||'Trabajador/a')}</strong> · ${esc(contract.roleTitle||'Contrato')} · ${esc(period.estado||period.status||'Open')} · neto ${pz(period.netoPz??item.netoPz)}</summary>
+      <p class="meta">DIP ${esc(contract.employeeDip||'—')} · Cuenta empresa ${esc(contract.companyAccountId||'—')} · Jornada ${esc(contract.workloadPct??100)}%</p>
+      <div class="tw"><table><thead><tr><th>Concepto</th><th>Tipo</th><th>Estado</th><th>Importe</th></tr></thead><tbody>${lines.map(line=>`<tr><td>${esc(line.concepto||'—')}</td><td>${esc(line.tipo||'—')}${line.periodicidad?` · ${esc(line.periodicidad)}`:''}</td><td>${line.aplicado?'Aplicado':esc(line.estado||'No aplicado')}</td><td>${pz(line.importePz)}</td></tr>`).join('')||'<tr><td colspan="4">Sin desglose disponible para este periodo.</td></tr>'}</tbody></table></div>
+      <div class="payroll-breakdown"><p class="payroll-total">Base ${pz(period.basePz??item.basePz)} · Complementos fijos ${pz(period.complementosFijosPz??item.complementosFijosPz)} · Actividad ${pz(period.complementosActividadPz??item.complementosActividadPz)}</p>
+      <p>Bruto ${pz(period.brutoPz??item.brutoPz)} · Retención (${esc(period.retencionPct??item.retencionPct)}%) ${pz(period.retencionesPz??item.retencionesPz)} · <strong>Neto ${pz(period.netoPz??item.netoPz)}</strong></p>
+      <p>IAL empleador ${pz(employer.totalPz)} (valorización ${pz(employer.valorizacionPz)} · Banco ${pz(employer.bancoPz)}) · IAL trabajador ${pz(employee.totalPz)} (antigüedad ${pz(employee.antiguedadPz)} · Banco ${pz(employee.bancoPz)})</p></div>
+    </details></article>`;
+  }).join('');
+}
+function renderPayrollData(){
+  const state=$('#payrollState');
+  if(!state)return;
+  if(payrollCache.error){state.innerHTML=`<div class="warn">${esc(payrollError(payrollCache.error))}<div class="payroll-actions"><button class="btn sec" type="button" data-act="payroll-refresh">Reintentar</button></div></div>`;return}
+  const data=payrollCache.data;
+  if(!data){state.innerHTML='<div class="empty">Cargando datos de nómina…</div>';return}
+  const periods=data.periodos||[];
+  const contracts=data.contratos||[];
+  state.innerHTML=`<div class="payroll-toolbar"><div class="f"><label for="payroll-period">Periodo</label><input id="payroll-period" type="month" value="${esc(payrollCache.period||data.periodo||month())}"></div><button class="btn sec" type="button" data-act="payroll-refresh">Cargar periodo</button><span class="meta">Los datos se consultan al entrar aquí o al pulsar «Cargar periodo»; no hay sondeos de nóminas.</span></div>
+    <div class="kpis payroll-info"><div class="kpi"><b>${periods.length}</b><span class="meta">periodos registrados</span></div><div class="kpi"><b>${contracts.length}</b><span class="meta">contratos</span></div><div class="kpi"><b>${esc(data.periodo||payrollCache.period||'—')}</b><span class="meta">periodo consultado</span></div></div>
+    ${isAdmin?payrollConfigForm(data.config):''}
+    <article class="card"><h3>Nóminas y desglose por contrato</h3>${payrollDetails(data)}</article>
+    <article class="card"><h3>Periodos registrados</h3>${periods.length?`<div class="tw"><table><thead><tr><th>Periodo</th><th>Trabajador/a</th><th>Estado</th><th>Bruto</th><th>Neto</th><th></th></tr></thead><tbody>${periods.map(period=>`<tr><td class="payroll-period">${esc(period.periodo||'—')}</td><td>${esc(period.employeeName||period.employeeDip||period.contractId||'—')}</td><td>${esc(period.status||'—')}</td><td>${pz(period.brutoPz)}</td><td>${pz(period.netoPz)}</td><td><button class="btn sm sec" type="button" data-payroll-period="${esc(period.periodo||'')}">Ver desglose</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="meta">Aún no hay periodos de nómina generados.</p>'}</article>
+    ${isAdmin?`<article class="card"><h3>Contratos configurados</h3>${contracts.length?`<div class="tw"><table><thead><tr><th>Trabajador/a</th><th>Empresa</th><th>Estado</th><th>Salario base</th><th>Jornada</th><th>Complementos</th></tr></thead><tbody>${contracts.map(c=>`<tr><td>${esc(c.employeeName||c.employeeDip||'—')}<br><span class="meta">${esc(c.employeeDip||'')}</span></td><td>${esc(c.companyAccountId||'—')}</td><td>${esc(c.status||'—')}</td><td>${pz(c.grossSalaryPz)}</td><td>${esc(c.workloadPct??100)}%</td><td>${(c.complementos||[]).map(x=>`${esc(x.concepto||'Complemento')}: ${pz(x.importePz)}${x.activo===false?' (inactivo)':''}`).join('<br>')||'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="meta">No hay contratos configurados.</p>'}</article>`:''}`;
+}
+async function loadPayroll(period='',force=false){
+  const selected=period||month();
+  if(payrollCache.request&&payrollCache.period===selected)return payrollCache.request;
+  if(!force&&payrollCache.data&&payrollCache.period===selected){renderPayrollData();return}
+  payrollCache.period=selected;payrollCache.data=null;payrollCache.error=null;renderPayrollData();
+  const query=new URLSearchParams({action:'estado',periodo:selected});
+  let request;
+  request=(async()=>{
+    try{
+      const response=await fetch(`/api/banco-nominas?${query}`,{credentials:'same-origin',cache:'no-store'});
+      const result=await response.json().catch(()=>({error:response.status===504?'bank_timeout':'request_failed'}));
+      if(!response.ok)throw new Error(result.error||'request_failed');
+      if(payrollCache.request===request){payrollCache.data=result;payrollCache.error=null}
+    }catch(error){if(payrollCache.request===request)payrollCache.error=error}
+    finally{if(payrollCache.request===request){payrollCache.request=null;renderPayrollData()}}
+  })();
+  payrollCache.request=request;
+  return request;
+}
+async function savePayrollConfig(button){
+  const form=$('#payrollConfigForm');
+  if(!form||!form.reportValidity())return;
+  const values=new FormData(form),number=name=>Number(values.get(name));
+  const config={
+    cutoffDay:number('cutoffDay'),
+    retencionPct:number('retencionPct'),
+    smiMensualPz:number('smiMensualPz'),
+    activo:values.has('activo'),
+    autoPago:values.has('autoPago'),
+    ial:{
+      empleadorPct:number('ial.empleadorPct'),
+      trabajadorPct:number('ial.trabajadorPct'),
+      empleadorValorizacionPct:number('ial.empleadorValorizacionPct'),
+      empleadorBancoPct:number('ial.empleadorBancoPct'),
+      trabajadorAntiguedadPct:number('ial.trabajadorAntiguedadPct'),
+      trabajadorBancoPct:number('ial.trabajadorBancoPct')
+    }
+  };
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/banco-nominas',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'config',guardar:true,...config})});
+    const result=await response.json().catch(()=>({error:response.status===504?'bank_timeout':'request_failed'}));
+    if(!response.ok)throw new Error(result.error||'request_failed');
+    payrollCache.data=null;payrollCache.error=null;
+    await loadPayroll(payrollCache.period||month(),true);
+    toast('Configuración de nóminas guardada en el Banco');
+  }catch(error){toast(payrollError(error))}
+  finally{button.disabled=false}
+}
+function rNominas(){
+  const m=$('#m');
+  m.innerHTML='<article class="card"><h2>Nóminas y complementos de actividad</h2><p class="meta">Consulta tus nóminas y su desglose. Administración y Presidencia pueden gestionar los parámetros globales. No se realizan pagos desde esta pantalla.</p><div id="payrollState"></div></article>';
+  renderPayrollData();
+  if(!payrollCache.data&&!payrollCache.request&&!payrollCache.error)void loadPayroll(month());
+}
 const resChip=cid=>{const r=S.res.find(x=>x.id===cid);return r&&RES[r.estado]?`<span class="chip ${RES[r.estado][1]}">${RES[r.estado][0]}</span>`:''};
 function render(){
   if(!db)return;
+  if(view!=='nominas')payrollRendered=false;
   const showT=isAdmin||S.res.some(r=>r.estado==='plaza'),bt=$('#navT');
   if(showT&&!bt)$('#nav').insertAdjacentHTML('beforeend','<button data-v="tareas" id="navT">Tareas</button>');else if(!showT&&bt)bt.remove();
   const bn=$('#navNom');if(showT&&!bn)$('#nav').insertAdjacentHTML('beforeend','<button data-v="nominas" id="navNom">Nóminas</button>');else if(!showT&&bn)bn.remove();
@@ -492,7 +627,7 @@ function render(){
     if(!GNODE){GNODE=document.createElement('div');GNODE.id='gestor';GNODE.appendChild($('#gtpl').content.cloneNode(true));m.innerHTML='';m.appendChild(GNODE);initGestor(db,user)}
     else if(!m.contains(GNODE)){m.innerHTML='';m.appendChild(GNODE);window.__gestorRender&&window.__gestorRender()}
     return}
-  if(view==='nominas')return rNominas();
+  if(view==='nominas'){if(payrollRendered)return;payrollRendered=true;return rNominas()}
   if(view==='gest'){if(m.contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;return m.innerHTML=rGest()}
   if(view==='sel')return selRender();
   if(view==='pres')return presRender();

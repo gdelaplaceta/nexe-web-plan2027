@@ -165,6 +165,42 @@ test('payroll endpoint preserves upstream authentication errors for diagnosis', 
   });
 });
 
+test('administration can persist payroll configuration through the Bank API', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    let bankRequest;
+    globalThis.fetch = async (input, init = {}) => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      if (url.hostname === 'supabase.example') return supabaseProfile('presidencia')(input);
+      bankRequest = { url, init };
+      return new Response('{"ok":true}', { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+    const config = {
+      action: 'config',
+      guardar: true,
+      cutoffDay: 20,
+      autoPago: false,
+      retencionPct: 10,
+      ial: { empleadorPct: 12, trabajadorPct: 12 },
+    };
+    const res = responseMock();
+    await handler({
+      method: 'POST',
+      headers: { cookie: signedCookie('12345678Z') },
+      body: config,
+      query: {},
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(bankRequest.url.href, 'https://api.banco.laplaceta.org/api/nominas');
+    assert.equal(bankRequest.init.headers['x-crm-key'], 'private-crm-test-key');
+    assert.deepEqual(JSON.parse(bankRequest.init.body), config);
+  });
+});
+
 test('payroll mutations are restricted to administration and presidency', async () => {
   await withEnvironment({
     NEXE_SESSION_SECRET: sessionSecret,
