@@ -172,3 +172,4 @@ grant all on public.nexe_documents to service_role;
 
 -- New aspirant accounts are inserted only after explicit acceptance of the
 -- current Nexe terms and acknowledgment of the privacy notice.
+notify pgrst, 'reload schema';

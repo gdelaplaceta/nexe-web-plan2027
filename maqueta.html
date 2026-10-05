@@ -791,6 +791,7 @@ async function seed(){
   },'Convocatoria de ejemplo cargada');
 }
 
+let databaseSchemaWarningShown=false;
 function createApiAdapter(profile){
   const api=async(method,path,id,data)=>{
     const query=new URLSearchParams({path});
@@ -802,7 +803,12 @@ function createApiAdapter(profile){
       credentials:'same-origin'
     });
     const result=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(result.error||'No se pudo completar la operación');
+    if(!response.ok){
+      const error=new Error(result.error||'No se pudo completar la operación');
+      error.code=result.error;
+      error.status=response.status;
+      throw error;
+    }
     return result.data;
   };
   const docSnapshot=row=>({id:row.document_id,data:()=>row.payload||{}});
@@ -814,16 +820,28 @@ function createApiAdapter(profile){
       return {id};
     },
     onSnapshot:(callback,onError)=>{
-      let stopped=false,running=false;
+      let stopped=false,running=false,timer;
       const refresh=async()=>{
         if(stopped||running)return;
         running=true;
         try{callback({docs:(await api('GET',path)).map(docSnapshot)})}
-        catch(error){if(!stopped){if(onError)onError(error);else console.error('Nexe collection subscription failed:',error)}}
+        catch(error){
+          if(!stopped){
+            if(error.code==='database_schema_missing'){
+              stopped=true;
+              clearInterval(timer);
+              if(!databaseSchemaWarningShown){
+                databaseSchemaWarningShown=true;
+                toast('Falta instalar la base de datos de Nexe. Pide a Administración ejecutar supabase/migrations/20261005_placetaid_sessions.sql.');
+              }
+            }else if(onError)onError(error);
+            else console.error('Nexe collection subscription failed:',error);
+          }
+        }
         finally{running=false}
       };
       void refresh();
-      const timer=setInterval(refresh,8000);
+      timer=setInterval(refresh,8000);
       return()=>{stopped=true;clearInterval(timer)};
     }
   });

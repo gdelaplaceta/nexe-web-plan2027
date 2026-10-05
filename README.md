@@ -19,6 +19,9 @@ y solo permite el acceso si existe un perfil activo.
 1. Ejecuta la versión actual de [`supabase/schema.sql`](supabase/schema.sql) en
    el SQL Editor del proyecto Supabase que utiliza Nexe. Si aplicaste una
    versión anterior, vuelve a ejecutarla para crear `nexe_documents`.
+   Para actualizar una instalación que ya tiene `nexe_profiles`, también puedes
+   ejecutar la migración específica
+   [`supabase/migrations/20261005_placetaid_sessions.sql`](supabase/migrations/20261005_placetaid_sessions.sql).
 2. La persona inicia sesión con PlacetaID. Si todavía no tiene perfil, Nexe le
    muestra los [Términos y condiciones](legal/terminos.html) y la [Política de
    privacidad](legal/privacidad.html). Solo después de aceptar los términos y

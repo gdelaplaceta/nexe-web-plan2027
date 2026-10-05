@@ -223,3 +223,117 @@ test('Nexe restores PlacetaID session and serves user-scoped collections', async
     }
   }
 });
+
+test('an aspirant can write only their own profile document', async () => {
+  const originalFetch = globalThis.fetch;
+  const oldEnvironment = {
+    NEXE_SESSION_SECRET: process.env.NEXE_SESSION_SECRET,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+  };
+  process.env.NEXE_SESSION_SECRET = sessionSecret;
+  process.env.SUPABASE_URL = 'https://supabase.example';
+  process.env.SUPABASE_SECRET_KEY = 'server-secret-test';
+  let documentInsertCount = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+    if (url.pathname === '/rest/v1/nexe_profiles') {
+      return new Response(JSON.stringify([{
+        id: 'profile-uuid',
+        dip: '12345678Z',
+        nombre: 'Ana Pérez',
+        rol: 'aspirante',
+        activo: true,
+      }]), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    if (url.pathname === '/rest/v1/nexe_documents' && init.method === 'POST') {
+      documentInsertCount += 1;
+      const row = JSON.parse(init.body);
+      assert.equal(row.collection_path, 'aspirantes');
+      assert.equal(row.document_id, '12345678Z');
+      assert.equal(row.owner_id, 'profile-uuid');
+      return new Response(JSON.stringify({
+        document_id: row.document_id,
+        payload: row.payload,
+      }), { status: 201, headers: { 'content-type': 'application/json' } });
+    }
+    throw new Error(`Unexpected ${init.method || 'GET'} request ${url.href}`);
+  };
+
+  try {
+    const cookie = signedSessionCookie();
+    const allowed = responseMock();
+    await records({
+      method: 'PUT',
+      query: { path: 'aspirantes', id: '12345678Z' },
+      headers: { cookie },
+      body: { data: { nombre: 'Ana Pérez' } },
+    }, allowed);
+    assert.equal(allowed.statusCode, 200);
+    assert.equal(documentInsertCount, 1);
+
+    const forbidden = responseMock();
+    await records({
+      method: 'PUT',
+      query: { path: 'aspirantes', id: '87654321X' },
+      headers: { cookie },
+      body: { data: { nombre: 'No autorizado' } },
+    }, forbidden);
+    assert.equal(forbidden.statusCode, 403);
+    assert.equal(documentInsertCount, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [name, value] of Object.entries(oldEnvironment)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
+test('missing Nexe documents table returns actionable setup error', async () => {
+  const originalFetch = globalThis.fetch;
+  const oldEnvironment = {
+    NEXE_SESSION_SECRET: process.env.NEXE_SESSION_SECRET,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+  };
+  process.env.NEXE_SESSION_SECRET = sessionSecret;
+  process.env.SUPABASE_URL = 'https://supabase.example';
+  process.env.SUPABASE_SECRET_KEY = 'server-secret-test';
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+    if (url.pathname === '/rest/v1/nexe_profiles') {
+      return new Response(JSON.stringify([{
+        id: 'profile-uuid',
+        dip: '12345678Z',
+        nombre: 'Ana Pérez',
+        rol: 'aspirante',
+        activo: true,
+      }]), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    if (url.pathname === '/rest/v1/nexe_documents') {
+      return new Response(JSON.stringify({
+        code: 'PGRST205',
+        message: "Could not find the table 'public.nexe_documents' in the schema cache",
+      }), { status: 404, headers: { 'content-type': 'application/json' } });
+    }
+    throw new Error(`Unexpected ${init.method || 'GET'} request ${url.href}`);
+  };
+
+  try {
+    const result = responseMock();
+    await records({
+      method: 'GET',
+      query: { path: 'convocatorias' },
+      headers: { cookie: signedSessionCookie() },
+    }, result);
+    assert.equal(result.statusCode, 503);
+    assert.deepEqual(result.body, { error: 'database_schema_missing' });
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [name, value] of Object.entries(oldEnvironment)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});

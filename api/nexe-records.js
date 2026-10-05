@@ -23,8 +23,9 @@ function canRead(path, user) {
   return false;
 }
 
-function canWrite(path, user) {
+function canWrite(path, id, user) {
   if (admin(user)) return true;
+  if (path === 'aspirantes') return id === user.dip;
   const segments = path.split('/');
   if (segments[0] !== 'aspirantes' || segments[1] !== user.dip) return false;
   return segments.length === 2 || ['inscripciones', 'intentos'].includes(segments[2]);
@@ -58,7 +59,7 @@ async function handleDocumentApi(req, res, sb, user) {
   }
 
   if (req.method === 'PUT' || req.method === 'PATCH') {
-    if (!id || !canWrite(path, user)) return res.status(id ? 403 : 400).json({ error: id ? 'forbidden' : 'document_id_required' });
+    if (!id || !canWrite(path, id, user)) return res.status(id ? 403 : 400).json({ error: id ? 'forbidden' : 'document_id_required' });
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     if (!body.data || typeof body.data !== 'object' || Array.isArray(body.data)) {
       return res.status(400).json({ error: 'invalid_document' });
@@ -81,7 +82,7 @@ async function handleDocumentApi(req, res, sb, user) {
   }
 
   if (req.method === 'DELETE') {
-    if (!id || !canWrite(path, user)) return res.status(id ? 403 : 400).json({ error: id ? 'forbidden' : 'document_id_required' });
+    if (!id || !canWrite(path, id, user)) return res.status(id ? 403 : 400).json({ error: id ? 'forbidden' : 'document_id_required' });
     let query = sb.from(collection).delete().eq('collection_path', path).eq('document_id', id);
     if (!admin(user)) query = query.eq('owner_id', user.id);
     const { error } = await query;
@@ -113,5 +114,16 @@ export default async function handler(req, res) {
       return res.status(201).json({ data });
     }
     return res.status(405).json({ error: 'method_not_allowed' });
-  } catch (e) { return res.status(e.message === 'missing_session' || e.message === 'invalid_session' ? 401 : 503).json({ error: e.message }); }
+  } catch (error) {
+    if (['missing_session', 'invalid_session'].includes(error.message)) {
+      return res.status(401).json({ error: error.message });
+    }
+    const code = String(error?.code || '');
+    if (['42P01', 'PGRST205'].includes(code)) {
+      console.error('[Nexe records] DOCUMENT_SCHEMA_MISSING', code);
+      return res.status(503).json({ error: 'database_schema_missing' });
+    }
+    console.error('[Nexe records] REQUEST_FAILED', code || 'RECORDS_UNAVAILABLE');
+    return res.status(503).json({ error: 'records_unavailable' });
+  }
 }
