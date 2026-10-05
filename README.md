@@ -16,8 +16,9 @@ El inicio de sesión de PlacetaID se vincula al perfil de Nexe por DIP. La tabla
 `nexe_profiles` no depende de `auth.users`: Nexe valida la cuenta en el servidor
 y solo permite el acceso si existe un perfil activo.
 
-1. Ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor del
-   proyecto Supabase que utiliza Nexe.
+1. Ejecuta la versión actual de [`supabase/schema.sql`](supabase/schema.sql) en
+   el SQL Editor del proyecto Supabase que utiliza Nexe. Si aplicaste una
+   versión anterior, vuelve a ejecutarla para crear `nexe_documents`.
 2. La persona inicia sesión con PlacetaID. Si todavía no tiene perfil, Nexe le
    muestra los [Términos y condiciones](legal/terminos.html) y la [Política de
    privacidad](legal/privacidad.html). Solo después de aceptar los términos y
@@ -42,9 +43,7 @@ cumplimiento normativo.
 Nexe no usa `localStorage` como modo de funcionamiento. PlacetaID autentica al
 usuario y el servidor valida el perfil en Supabase; si falta, la persona puede
 crearlo tras aceptar los términos y confirmar la lectura de privacidad. Los
-perfiles desactivados no se reactivan durante el login. La maqueta HTML aún
-espera el adaptador anfitrión
-`window.claude.use('db')` / `window.claude.use('user')`; el despliegue debe
-proporcionar ese adaptador o conectar esa UI a las rutas API antes de usar sus
-funciones de datos. `SUPABASE_SECRET_KEY` solo debe usarse en el servidor; la
-clave publishable/anon no la sustituye en estas rutas.
+perfiles desactivados no se reactivan durante el login. La UI consulta
+`/api/placetaid-session` y usa las rutas API del servidor para sus documentos.
+`SUPABASE_SECRET_KEY` solo debe usarse en el servidor; la clave publishable/anon
+no la sustituye en estas rutas.

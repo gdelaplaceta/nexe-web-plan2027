@@ -154,5 +154,21 @@ create policy "profiles own update"
   using (id = auth.uid())
   with check (id = auth.uid() and rol = 'aspirante');
 
+-- Server-backed document store for the existing Nexe UI. Access is mediated
+-- by api/nexe-records.js using the signed Nexe session; do not expose the
+-- server secret key to browser clients.
+create table if not exists public.nexe_documents (
+  id uuid primary key default gen_random_uuid(),
+  collection_path text not null,
+  document_id text not null,
+  owner_id uuid not null references public.nexe_profiles(id),
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  unique (collection_path, document_id)
+);
+alter table public.nexe_documents enable row level security;
+revoke all on public.nexe_documents from anon, authenticated;
+grant all on public.nexe_documents to service_role;
+
 -- New aspirant accounts are inserted only after explicit acceptance of the
 -- current Nexe terms and acknowledgment of the privacy notice.

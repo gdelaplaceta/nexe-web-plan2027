@@ -41,6 +41,7 @@ select{background:var(--card);border:1px solid var(--line);border-radius:6px;pad
 a.btn{display:inline-block;text-decoration:none;line-height:24px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}.kpi b{display:block;font-size:30px;line-height:1.1}
 #lbar{background:var(--coin);color:var(--coinink);padding:8px clamp(14px,4vw,40px);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}#lbar input,#lbar select{width:auto;min-height:34px;padding:4px 8px;font-size:14px}#lbar .btn{min-height:34px;padding:4px 12px}
+.session-user{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:999px;font-size:12px}
 pre.p{white-space:pre-wrap;font-size:12px;background:var(--bg);padding:8px;border-radius:6px}
 main.wide{max-width:1200px;padding:0}
 #gestor{--side:#14312D;--sideink:#E6EEEB;
@@ -790,15 +791,121 @@ async function seed(){
   },'Convocatoria de ejemplo cargada');
 }
 
+function createApiAdapter(profile){
+  const api=async(method,path,id,data)=>{
+    const query=new URLSearchParams({path});
+    if(id)query.set('id',id);
+    const response=await fetch('/api/nexe-records?'+query.toString(),{
+      method,
+      headers:method==='GET'?{}:{'Content-Type':'application/json'},
+      ...(method==='GET'?{}:{body:JSON.stringify(data===undefined?{}:{data})}),
+      credentials:'same-origin'
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'No se pudo completar la operación');
+    return result.data;
+  };
+  const docSnapshot=row=>({id:row.document_id,data:()=>row.payload||{}});
+  const collection=path=>({
+    get:async()=>({docs:(await api('GET',path)).map(docSnapshot)}),
+    add:async data=>{
+      const id=crypto.randomUUID();
+      await api('PUT',path,id,data);
+      return {id};
+    },
+    onSnapshot:(callback,onError)=>{
+      let stopped=false,running=false;
+      const refresh=async()=>{
+        if(stopped||running)return;
+        running=true;
+        try{callback({docs:(await api('GET',path)).map(docSnapshot)})}
+        catch(error){if(!stopped){if(onError)onError(error);else console.error('Nexe collection subscription failed:',error)}}
+        finally{running=false}
+      };
+      void refresh();
+      const timer=setInterval(refresh,8000);
+      return()=>{stopped=true;clearInterval(timer)};
+    }
+  });
+  return {
+    collection,
+    doc:documentPath=>{
+      const parts=documentPath.split('/');
+      const id=parts.pop();
+      const path=parts.join('/');
+      return {
+        get:async()=>{const row=await api('GET',path,id);return {exists:!!row,id,data:()=>row?.payload||{}}},
+        set:data=>api('PUT',path,id,data),
+        update:data=>api('PATCH',path,id,data),
+        delete:()=>api('DELETE',path,id)
+      };
+    }
+  };
+}
+
+function createApiUser(profile){
+  return {
+    id:async()=>profile.id,
+    canEdit:async()=>profile.role==='administracion'||profile.role==='presidencia',
+    isOwner:async()=>profile.role==='presidencia',
+    profiles:async ids=>Object.fromEntries(ids.map(id=>[id,{name:id===profile.id?profile.name:'Aspirante'}]))
+  };
+}
+
+async function logoutPlacetaid(){
+  await fetch('/api/placetaid-logout',{method:'POST',credentials:'same-origin'});
+  location.assign('/');
+}
+
 (async()=>{
-  try{if(MODO!=='local'){db=await window.claude?.use('db');user=await window.claude?.use('user')}}catch(e){}
+  if(MODO!=='local'){
+    try{
+      if(window.claude?.use){
+        db=await window.claude.use('db');
+        user=await window.claude.use('user');
+      }
+    }catch(error){
+      console.warn('Nexe host session adapter is unavailable; trying PlacetaID session:',error);
+    }
+    if(!db||!user){
+      try{
+        const response=await fetch('/api/placetaid-session',{credentials:'same-origin',cache:'no-store'});
+        if(response.ok){
+          const session=await response.json();
+          if(session.authenticated&&session.user){
+            db=createApiAdapter(session.user);
+            user=createApiUser(session.user);
+          }
+        }else if(response.status!==401){
+          throw new Error('No se pudo comprobar tu sesión de Nexe');
+        }
+      }catch(error){
+        console.error('Nexe PlacetaID session initialization failed:',error);
+        const boot=$('#boot');
+        if(boot)boot.innerHTML='<b>No se pudo comprobar tu sesión.</b><br>Comprueba tu conexión e inténtalo de nuevo.<br><a class="btn ok" href="/api/placetaid-login" style="display:inline-block;margin-top:12px;text-decoration:none">Reintentar con PlacetaID</a>';
+        return;
+      }
+    }
+  }
   if(!db||!user){
     db=null;user=null;$('#lbar').hidden=true;
-    const boot=$('#boot');if(boot)boot.innerHTML='<b>Nexe necesita sesión de producción.</b><br>Accede con tu identidad PlacetaID v27 para continuar.<br><a class="btn ok" href="/api/placetaid-login" style="display:inline-block;margin-top:12px;text-decoration:none">Entrar con PlacetaID v27</a>';
+    const boot=$('#boot');if(boot)boot.innerHTML='<b>Nexe necesita una sesión de PlacetaID.</b><br>Accede o crea tu cuenta para ver las convocatorias.<br><a class="btn ok" href="/api/placetaid-login" style="display:inline-block;margin-top:12px;text-decoration:none">Entrar con PlacetaID v27</a>';
     return;
   }
   uid=await user.id();isAdmin=await user.canEdit();isPres=await user.isOwner();
-  try{const p=await user.profiles([uid]);await db.doc('aspirantes/'+uid).set({nombre:p[uid]?.name||'Aspirante'})}catch(e){}
+  if(!window.claude?.use){
+    const sessionLabel=document.createElement('span');
+    sessionLabel.className='session-user';
+    sessionLabel.textContent=`Sesión: ${uid}`;
+    $('#nav').appendChild(sessionLabel);
+    const logoutButton=document.createElement('button');
+    logoutButton.type='button';
+    logoutButton.textContent='Salir';
+    logoutButton.addEventListener('click',()=>void logoutPlacetaid());
+    $('#nav').appendChild(logoutButton);
+  }
+  try{const p=await user.profiles([uid]);await db.doc('aspirantes/'+uid).set({nombre:p[uid]?.name||'Aspirante'})}
+  catch(error){console.error('Nexe profile initialization failed:',error);toast('Sesión iniciada, pero no se pudo cargar tu perfil. Recarga la página.')}
   const sub=(path,key)=>db.collection(path).onSnapshot(s=>{S[key]=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>console.error(e));
   sub('convocatorias','conv');sub('questions','q');sub(`aspirantes/${uid}/inscripciones`,'insc');sub(`aspirantes/${uid}/intentos`,'int');sub(`notas/${uid}/r`,'notas');sub(`notas/${uid}/res`,'res');
   if(isAdmin)$('#nav').insertAdjacentHTML('beforeend','<button data-v="gest">Gestionar</button><button data-v="sel">Selección</button>'+(isPres?'<button data-v="pres">Presidencia</button>':''));
