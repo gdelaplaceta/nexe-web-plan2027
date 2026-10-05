@@ -66,6 +66,50 @@ test('payroll endpoint requires a valid PlacetaID-backed Nexe session', async ()
   });
 });
 
+test('payroll endpoint identifies a malformed Bank URL as configuration error', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_NOMINAS_URL: 'not a valid url',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    globalThis.fetch = async input => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      return supabaseProfile('presidencia')(input);
+    };
+    const res = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: {},
+    }, res);
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, { error: 'bank_url_invalid' });
+  });
+});
+
+test('payroll endpoint reports a Supabase session lookup failure separately', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+  }, async () => {
+    globalThis.fetch = async () => new Response('{"message":"database unavailable"}', {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+    });
+    const res = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: {},
+    }, res);
+    assert.equal(res.statusCode, 503);
+    assert.equal(res.body.error, 'session_unavailable');
+  });
+});
+
 test('payroll GET defaults to the Bank API and restricts employees to their own data', async () => {
   await withEnvironment({
     NEXE_SESSION_SECRET: sessionSecret,
@@ -92,6 +136,32 @@ test('payroll GET defaults to the Bank API and restricts employees to their own 
     assert.equal(calls.length, 1);
     assert.equal(calls[0].url.href, 'https://api.banco.laplaceta.org/api/nominas?action=estado&employeeDip=12345678Z');
     assert.equal(calls[0].init.headers['x-crm-key'], 'private-crm-test-key');
+  });
+});
+
+test('payroll endpoint preserves upstream authentication errors for diagnosis', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    globalThis.fetch = async (input) => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      if (url.hostname === 'supabase.example') return supabaseProfile('presidencia')(input);
+      return new Response('{"error":"invalid_crm_key"}', {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const res = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: { action: 'estado' },
+    }, res);
+    assert.equal(res.statusCode, 401);
+    assert.deepEqual(JSON.parse(res.body), { error: 'invalid_crm_key' });
   });
 });
 
