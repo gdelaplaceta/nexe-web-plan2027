@@ -139,8 +139,29 @@ export default async function handler(req, res) {
     if (result.error) throw result.error;
     profile = result.data;
   } catch (error) {
-    console.error('[Nexe PlacetaID callback] PROFILE_LOOKUP_FAILED', error?.code || 'SUPABASE_UNAVAILABLE');
+    const errorCode = String(error?.code || '');
+    const errorMarker = error?.message === 'supabase_not_configured'
+      ? 'SUPABASE_NOT_CONFIGURED'
+      : errorCode || 'SUPABASE_UNAVAILABLE';
+    console.error('[Nexe PlacetaID callback] PROFILE_LOOKUP_FAILED', errorMarker);
     clearStateCookie(res);
+    if (['42P01', 'PGRST205'].includes(errorCode)) {
+      return sendCallbackMessage(
+        res,
+        503,
+        'Falta instalar la base de datos de Nexe',
+        'La tabla de perfiles aún no está disponible en Supabase. Ejecuta supabase/schema.sql y registra una cuenta activa antes de volver a iniciar sesión.',
+      );
+    }
+    if (error?.message === 'supabase_not_configured') {
+      return sendCallbackMessage(
+        res,
+        503,
+        'Falta configurar Supabase en Nexe',
+        'La administración debe configurar SUPABASE_URL y SUPABASE_SERVICE_KEY en las variables de entorno de producción.',
+        false,
+      );
+    }
     return sendCallbackMessage(res, 503, 'No se pudo comprobar la cuenta de Nexe', 'Nexe no pudo consultar el perfil de usuario en Supabase. Comprueba la configuración del servidor e inténtalo de nuevo más tarde.');
   }
 

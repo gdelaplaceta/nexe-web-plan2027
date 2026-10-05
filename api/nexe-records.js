@@ -7,7 +7,9 @@ export default async function handler(req, res) {
     const table = String(req.query.table || '');
     if (!allowed.has(table)) return res.status(400).json({ error: 'invalid_table' });
     if (req.method === 'GET') {
-      const { data, error } = await sb.from(`nexe_${table}`).select('*').order('created_at', { ascending: false });
+      let query = sb.from(`nexe_${table}`).select('*').order('created_at', { ascending: false });
+      if (user.role !== 'presidencia') query = query.eq('owner_id', user.id);
+      const { data, error } = await query;
       if (error) throw error;
       return res.status(200).json({ data });
     }
