@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="/nexe-favi.png">
 <link rel="preload" as="image" href="/nexe-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F2F4F0;--card:#fff;--ink:#14312D;--mut:#5F716D;--line:#D9DFDA;--coin:#F0B429;--coinink:#4A3500;--red:#C23B2E;--ok:#2F7D5B;--blue:#2B5E8C;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="dark"]{--bg:#0F1B19;--card:#172624;--ink:#E6EEEB;--mut:#93A8A3;--line:#29403C;--red:#E5675A;--ok:#5CC297;--blue:#7DB1E0}
@@ -102,7 +103,7 @@ main{padding:12px clamp(14px,3vw,36px) 22px;min-width:0;max-width:980px}
 .st.todo{color:var(--mut)}.st.doing{color:var(--blue)}.st.review{color:#B07A00}.st.approved,.st.resolved{color:var(--ok)}.st.open{color:var(--red)}
 
 .act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer}.kpi .big{font-size:34px;line-height:1.1}h2{font-size:16px;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer}.kpi .big{font-size:34px;line-height:1.1}h2{font:700 16px/1.35 "Plus Jakarta Sans","Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 10px}
 .empty{padding:28px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:10px}
 .big{font-size:38px;font-weight:800}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}td:last-child,th:last-child{text-align:right}
@@ -146,6 +147,79 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
  main{margin:0}.row{border:0;padding:0}.btn{min-height:0}
 @media (prefers-color-scheme:dark){&{--side:#0A1312}}}
 @media (max-width:600px){.g2{grid-template-columns:1fr}header{padding:10px 14px}header small{display:none}header h1{font-size:19px}#nav{width:100%}#nav button{flex:1}}
+
+#gestor aside{gap:10px}
+#orgbar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 7px;scrollbar-width:thin}
+.org-chip{flex:0 0 auto;min-height:35px;padding:6px 10px;border:1px solid rgba(230,238,235,.28);border-radius:999px;background:rgba(255,255,255,.08);color:#E6EEEB;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.org-chip:hover{background:rgba(255,255,255,.15)}
+.org-chip.on{border-color:var(--coin);background:var(--coin);color:var(--coinink)}
+.org-empty,.project-empty{padding:7px 8px;color:#D5E2DE;font-size:12px}
+#tree{display:flex;flex-direction:column;gap:4px;max-height:min(38vh,380px);overflow-y:auto;padding-right:2px}
+#tree .node{min-height:40px;padding:6px 10px;border:1px solid transparent;text-align:left}
+#tree .node.proj{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding-left:12px}
+#tree .node.proj small{color:#C0D1CB;font-size:10px}
+#tree .node.proj.on{border-color:var(--coin);background:rgba(240,180,41,.16);color:#FFE19A}
+#tree .node.proj.on small{color:#FFE19A}
+#gestor aside .adm{padding-top:10px}
+#gestor aside .adm input,#gestor aside .adm select{min-height:40px}
+#gestor aside .adm .btn{min-height:38px}
+#gestor aside #mode{min-height:40px}
+.task-workspace-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 12px}
+.task-workspace-head h2{margin:0;color:var(--ink);font-size:22px;font-family:"Plus Jakarta Sans","Bricolage Grotesque",system-ui,sans-serif;font-weight:800;letter-spacing:-.035em}
+.task-workspace-head p{margin:3px 0 0}
+.task-workspace-head>.btn{flex:0 0 auto;min-height:40px}
+.task-create-panel{border-color:#C6D2CD;box-shadow:0 5px 18px rgba(20,49,45,.06)}
+.task-create-title{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.task-create-title strong{font-size:15px}
+.task-create-row{align-items:end}
+.task-create-row input,.task-create-row select{min-height:42px}
+.task-toolbar{display:grid;grid-template-columns:minmax(200px,1fr) auto;gap:10px;align-items:center;margin:12px 0 2px}
+.task-search{min-height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--mut)}
+.task-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 18%,transparent)}
+.task-search-icon{font-size:22px;line-height:1}
+.task-search input{height:38px;min-height:38px;padding:0;border:0;outline:0;box-shadow:none;background:transparent}
+.task-search input:focus{outline:0}
+.task-filters{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin}
+.task-filter{flex:0 0 auto;min-height:36px;display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.task-filter span{min-width:19px;padding:1px 5px;border-radius:999px;background:#E9EEEA;color:#344A44;font-size:11px;text-align:center}
+.task-filter.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.task-filter.on span{background:rgba(255,255,255,.18);color:#fff}
+.task-results{margin:5px 0 8px;font-size:12px}
+.task[hidden]{display:none}
+.task{transition:border-color .15s,box-shadow .15s}
+.task:hover{border-color:#AABBB3;box-shadow:0 4px 14px rgba(20,49,45,.07)}
+.task .meta{line-height:1.5}
+.task-comments summary{min-height:34px;display:flex;align-items:center;font-size:13px;font-weight:600}
+.task-comments .comment-box input{min-width:0}
+.st.review{color:#755000}
+.st.doing{color:#214F76}
+.st.approved,.st.resolved{color:#226345}
+.st.open{color:#9B2D25}
+
+@media(max-width:760px){
+ #gestor aside{padding:10px 12px;gap:7px}
+ #orgbar{width:100%;margin-inline:-2px;padding:2px 2px 7px;scroll-snap-type:x proximity}
+ .org-chip{min-height:38px;scroll-snap-align:start}
+ #tree{max-height:32vh}
+ #gestor aside:not(.open) #adm,#gestor aside:not(.open) #mode{display:none}
+ .task-workspace-head{align-items:flex-start;margin-top:6px}
+ .task-workspace-head h2{font-size:20px}
+ .task-workspace-head>.btn{min-height:40px;padding-inline:12px}
+ .task-toolbar{grid-template-columns:1fr;gap:8px;margin-top:9px}
+ .task-filters{margin-inline:-2px;padding:2px;scroll-snap-type:x proximity}
+ .task-filter{scroll-snap-align:start}
+ .task-results{margin:3px 0 7px}
+ .task-create-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .task-create-row #tTitle{grid-column:1/-1}
+ .task-create-row>.btn{grid-column:1/-1}
+ #tlist .task{grid-template-columns:44px minmax(0,1fr);align-items:start;padding:11px;gap:9px}
+ #tlist .task .coin{width:42px;height:42px;font-size:15px}
+ #tlist .task>div:nth-child(2){min-width:0}
+ #tlist .task .act{grid-column:1/-1;justify-content:flex-start}
+ #tlist .task .act .btn{flex:1 1 calc(50% - 6px);white-space:normal}
+ #tlist .comment-box{align-items:stretch}
+ #tlist .comment-box .btn{flex:0 0 auto}
+}
 </style>
 </head>
 <body>
@@ -157,6 +231,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
 <div class="app">
 <aside>
   <div class="brand"><h1>Grupo de La Placeta<small>Panel interno · Convenio 2027</small></h1><button class="menu" id="menuBtn" aria-expanded="false" aria-controls="tree">Proyectos ▾</button></div>
+  <nav id="orgbar" aria-label="Filtrar por organización"></nav>
   <nav id="tree" aria-label="Organizaciones y proyectos"></nav>
   <div class="adm" id="adm" hidden>
     <b>Nueva organización</b>
@@ -186,14 +261,24 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
     <div id="clist"></div>
   </section>
   <section id="s-tasks">
-    <div class="panel" id="tform" hidden>
-      <div class="row" style="margin:0">
+    <div class="task-workspace-head">
+      <div><h2 id="taskHeading">Tareas</h2><p class="meta" id="taskScopeLabel">Filtra y encuentra tareas por proyecto o estado.</p></div>
+      <button class="btn" id="taskCreateToggle" data-act="toggleTaskForm" aria-expanded="false">Nueva tarea</button>
+    </div>
+    <div class="panel task-create-panel" id="tform" hidden>
+      <div class="task-create-title"><strong>Crear tarea</strong><span class="meta">La recompensa se toma de la categoría elegida.</span></div>
+      <div class="row task-create-row" style="margin:0">
         <input id="tTitle" placeholder="Nueva tarea" style="flex:3 1 220px">
         <select id="tCat" aria-label="Categoría de la tarea"></select>
         <select id="tProj" aria-label="Proyecto de la tarea"></select>
-        <button class="btn" data-act="addTask">Añadir tarea</button>
+        <button class="btn" data-act="addTask">Crear tarea</button>
       </div>
     </div>
+    <div class="task-toolbar">
+      <label class="task-search"><span class="task-search-icon" aria-hidden="true">⌕</span><input id="taskSearch" type="search" placeholder="Buscar por tarea, proyecto o persona" aria-label="Buscar tareas"></label>
+      <div id="taskFilters" class="task-filters" aria-label="Filtrar tareas por estado"></div>
+    </div>
+    <p class="task-results meta" id="taskResults" aria-live="polite"></p>
     <div id="tlist"></div>
   </section>
 
@@ -240,7 +325,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const S={orgs:[],projects:[],tasks:[],task_comments:[],incidents:[],categories:[],members:[],assignments:[],acceptances:[],settings:[]};
 const R={};let gateOn=false;
-let meId=null,isAdmin=false,admin=false,mode='admin',tab=null,selOrg=null,selProj=null,names={};
+let meId=null,isAdmin=false,admin=false,mode='admin',tab=null,selOrg=null,selProj=null,names={},taskQuery='',taskStatus='all',taskFormOpen=false;
 const ST={todo:'Disponible',doing:'En curso',review:'Pendiente de revisión',approved:'Aprobada',open:'Abierta',resolved:'Resuelta'};
 const month=()=>new Date().toISOString().slice(0,7);
 $('#mon').value=month();
@@ -256,11 +341,14 @@ document.addEventListener('click',e=>{
   const tb=e.target.closest('[data-tab]');
   if(tb){tab=tb.dataset.tab;render();return}
   if(e.target.closest('#menuBtn')){const a=$('aside');a.classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',a.classList.contains('open'));return}
-  const nd=e.target.closest('[data-org],[data-all]');
+  const taskFilter=e.target.closest('[data-task-status]');
+  if(taskFilter){taskStatus=taskFilter.dataset.taskStatus;render();return}
+  const nd=e.target.closest('[data-org],[data-all],[data-org-all]');
   if(nd){selOrg=nd.dataset.org||null;selProj=nd.dataset.proj||null;$('aside').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false');render();return}
   const a=e.target.closest('[data-act]');if(!a||!db)return;
   const id=a.dataset.id,act=a.dataset.act;
-  if(act==='mode'){mode=mode==='admin'?'worker':'admin';render();return}
+  if(act==='mode'){mode=mode==='admin'?'worker':'admin';taskFormOpen=false;render();return}
+  if(act==='toggleTaskForm'){taskFormOpen=!taskFormOpen;render();if(taskFormOpen)$('#tTitle').focus();return}
   const T=x=>w(()=>db.doc('tasks/'+id).update(x));
   if(act==='accept'){if(!$('#gateChk').checked||!meId)return;const h=convHash(meId),old=S.acceptances.find(x=>x.id===meId),text=convDoc(meId);
     (async()=>{let meta={ip:'no-disponible',signedAt:new Date().toISOString()};try{const r=await fetch('/api/firma-convenio',{method:'POST'});if(r.ok)meta=await r.json()}catch(e){}const signerDip=String(meId).toUpperCase();await w(()=>db.doc('acceptances/'+meId).set({name:names[meId]||S.members.find(m=>m.id===meId)?.name||'Miembro',signerDip,hash:h,acceptedAt:meta.signedAt,ip:meta.ip,signatureMethod:'DIP',text,version:'2026.10',history:[...(old?.history||[]),{hash:h,at:meta.signedAt,ip:meta.ip,signerDip}].slice(-50)}),'Convenio firmado y guardado')})()}
@@ -288,8 +376,19 @@ document.addEventListener('click',e=>{
 $('#mon').addEventListener('change',render);
 document.addEventListener('change',e=>{const c=e.target.closest('[data-asg]');if(c&&db){const id=c.dataset.asg,cur=new Set(asg(id));c.checked?cur.add(c.value):cur.delete(c.value);w(()=>db.doc('assignments/'+id).set({projectIds:[...cur]}),'Asignación guardada · esa persona deberá aceptar de nuevo');return}
   const i=e.target.closest('[data-cat]');if(i&&db)w(()=>db.doc('categories/'+i.dataset.cat).update({reward:Math.max(0,parseInt(i.value)||0)}),'Importe actualizado · todos deberán aceptar de nuevo')});
+document.addEventListener('input',e=>{if(e.target.id==='taskSearch'){taskQuery=e.target.value.trim().toLocaleLowerCase('es');applyTaskSearch()}});
 
 function opts(el,list,ph){const v=el.value;el.innerHTML=list.map(([id,t])=>`<option value="${esc(id)}">${esc(t)}</option>`).join('')||`<option value="">${ph}</option>`;if(list.some(x=>x[0]===v))el.value=v}
+
+function applyTaskSearch(){
+  const items=[...document.querySelectorAll('#tlist .task')];
+  let count=0;
+  items.forEach(item=>{const matches=!taskQuery||item.dataset.taskSearch.includes(taskQuery);item.hidden=!matches;if(matches)count++});
+  const noResults=$('#taskNoResults');
+  if(noResults)noResults.hidden=count>0||items.length===0;
+  const total=$('#taskResults')?.dataset.total||'0';
+  $('#taskResults').textContent=`${count} de ${total} ${total==='1'?'tarea':'tareas'}`;
+}
 
 function render(){
   if(!db||!document.getElementById('tree'))return;
@@ -302,13 +401,21 @@ function render(){
   ['dash','profile','cats','team','tasks','inc','pay'].forEach(k=>$('#s-'+k).hidden=k!==sec);
   $('#who').textContent=(admin?'Vista administración':'Vista trabajador')+(names[meId]?' · '+names[meId]:'');
   $('#mode').hidden=!isAdmin;$('#mode').textContent=admin?'Ver como trabajador':'Volver a vista admin';
-  $('#adm').hidden=!admin;$('#tform').hidden=!admin||tab!=='tasks';
-  // árbol
-  let h=`<button class="node ${!selOrg&&!selProj?'on':''}" data-all="1">Todo el grupo</button>`;
-  vOrgs().forEach(o=>{h+=`<button class="node org ${selOrg===o.id&&!selProj?'on':''}" data-org="${esc(o.id)}">${esc(o.name)}</button>`;
-    vProjects().filter(p=>p.orgId===o.id).forEach(p=>h+=`<button class="node proj ${selProj===p.id?'on':''}" data-org="${esc(o.id)}" data-proj="${esc(p.id)}">${esc(p.name)}</button>`)});
-  $('#tree').innerHTML=h;
-  $('#menuBtn').textContent=(selProj?proj(selProj)?.name:selOrg?org(selOrg)?.name:'Todo el grupo')+' ▾';
+  $('#adm').hidden=!admin;
+  $('#taskCreateToggle').hidden=!admin||tab!=='tasks';
+  $('#tform').hidden=!admin||tab!=='tasks'||!taskFormOpen;
+  $('#taskCreateToggle').setAttribute('aria-expanded',String(taskFormOpen&&admin&&tab==='tasks'));
+  $('#taskCreateToggle').textContent=taskFormOpen?'Cerrar':'Nueva tarea';
+  $('#taskHeading').textContent=tab==='mine'?'Mis tareas':'Tareas disponibles';
+  const currentScope=selProj?proj(selProj)?.name:selOrg?org(selOrg)?.name:'Todo el grupo';
+  $('#taskScopeLabel').textContent=`${currentScope||'Todo el grupo'} · busca por título, proyecto o persona y filtra por estado.`;
+  const orgs=vOrgs();
+  $('#orgbar').innerHTML=`<button class="org-chip ${!selOrg?'on':''}" data-org-all="1" aria-pressed="${!selOrg}">Todo el grupo</button>`+
+    (orgs.map(o=>`<button class="org-chip ${selOrg===o.id?'on':''}" data-org="${esc(o.id)}" aria-pressed="${selOrg===o.id}">${esc(o.name)}</button>`).join('')||
+    '<span class="org-empty">Aún no hay organizaciones asignadas.</span>');
+  const visibleProjects=vProjects().filter(p=>!selOrg||p.orgId===selOrg);
+  $('#tree').innerHTML=visibleProjects.length?visibleProjects.map(p=>`<button class="node proj ${selProj===p.id?'on':''}" data-org="${esc(p.orgId)}" data-proj="${esc(p.id)}" aria-pressed="${selProj===p.id}"><span>${esc(p.name)}</span>${!selOrg?`<small>${esc(org(p.orgId)?.name||'')}</small>`:''}</button>`).join(''):'<span class="project-empty">No hay proyectos en esta selección.</span>';
+  $('#menuBtn').textContent=`Proyectos · ${selProj?proj(selProj)?.name:selOrg?org(selOrg)?.name:'todos'} ▾`;
   const pl=vProjects().map(p=>[p.id,(org(p.orgId)?.name||'')+' / '+p.name]);
   opts($('#pOrg'),S.orgs.map(o=>[o.id,o.name]),'Crea una organización');
   opts($('#tProj'),pl,'Crea un proyecto');
@@ -331,7 +438,8 @@ function card(t){
   if(t.status==='doing'&&(mine||admin))b+=`<button class="btn ok" data-act="done" data-id="${t.id}">Marcar hecha</button><button class="btn sec" data-act="drop" data-id="${t.id}">Soltar</button>`;
   if(t.status==='review'&&admin)b+=`<button class="btn ok" data-act="approve" data-id="${t.id}">Aprobar y abonar</button><button class="btn sec" data-act="devolver" data-id="${t.id}">Devolver</button>`;
   if(admin)b+=`<button class="btn bad" data-act="delTask" data-id="${t.id}" aria-label="Eliminar tarea">Eliminar</button>`;
-  return `<article class="task"><div class="coin" aria-label="${t.reward||0} Placetas"><span>${t.reward||0}<small>Placetas</small></span></div>
+  const searchText=[t.title,t.category,label(t),t.assignee?nm(t.assignee):'',ST[t.status]].join(' ').toLocaleLowerCase('es');
+  return `<article class="task" data-task-search="${esc(searchText)}"><div class="coin" aria-label="${t.reward||0} Placetas"><span>${t.reward||0}<small>Placetas</small></span></div>
   <div><h3>${esc(t.title)}</h3><div class="meta"><span class="st ${t.status}">${ST[t.status]}</span>${t.category?esc(t.category)+' · ':''}${label(t)}${t.assignee?' · '+esc(nm(t.assignee)):''}</div><details class="task-comments"><summary>Comentarios (${comments.length})</summary>${comments.map(c=>`<div class="meta comment"><b>${esc(nm(c.authorId))}</b> · ${esc(String(c.createdAt||'').replace('T',' ').slice(0,16))}<br>${esc(c.body)}</div>`).join('')||'<div class="meta">Aún no hay comentarios.</div>'}<div class="comment-box"><input type="text" data-comment-input="${esc(t.id)}" placeholder="Escribe al equipo…" maxlength="2000" aria-label="Comentario de la tarea"><button class="btn sm" data-act="addComment" data-id="${esc(t.id)}">Comentar</button></div></details></div>
   <div class="act">${b}</div></article>`}
 function rTasks(){
@@ -344,8 +452,19 @@ function rTasks(){
     pre=`<div class="kpis"><div class="kpi"><div class="big">${ap}</div><div class="meta">Placetas aprobadas este mes</div></div><div class="kpi"><div class="big">${pe}</div><div class="meta">en revisión</div></div></div>`;
   }else if(!admin)ts=ts.filter(t=>t.status==='todo'&&myP().has(t.projectId));
   ts.sort((a,b)=>(a.status==='approved')-(b.status==='approved')||(b.reward||0)-(a.reward||0));
+  const statusFilters=admin||tab==='mine'
+    ?[['all','Todas'],['todo','Disponibles'],['doing','En curso'],['review','En revisión'],['approved','Completadas']]
+    :[['all','Disponibles']];
+  if(!statusFilters.some(([key])=>key===taskStatus))taskStatus='all';
+  const counts=Object.fromEntries(statusFilters.map(([key])=>[key,key==='all'?ts.length:ts.filter(t=>t.status===key).length]));
+  const visible=taskStatus==='all'?ts:ts.filter(t=>t.status===taskStatus);
   const emptyMsg=tab==='mine'?'No tienes tareas. Cógelas en la pestaña Disponibles.':(!admin&&!myP().size)?'Administración aún no te ha asignado a ningún proyecto.':!S.projects.length?'Aún no hay proyectos. '+(admin?'Crea una organización y un proyecto en el panel izquierdo.':''):!admin?'No hay tareas disponibles ahora mismo.':'No hay tareas en esta selección.';
-  $('#tlist').innerHTML=pre+(ts.length?ts.map(card).join(''):`<div class="empty">${emptyMsg}</div>`);
+  $('#taskSearch').value=taskQuery;
+  $('#taskFilters').innerHTML=statusFilters.map(([key,label])=>`<button class="task-filter ${taskStatus===key?'on':''}" data-task-status="${key}" aria-pressed="${taskStatus===key}">${label}<span>${counts[key]}</span></button>`).join('');
+  $('#taskResults').dataset.total=String(visible.length);
+  $('#taskResults').textContent=`${visible.length} ${visible.length===1?'tarea':'tareas'}`;
+  $('#tlist').innerHTML=pre+(visible.length?visible.map(card).join('')+'<div id="taskNoResults" class="empty" hidden>No hay tareas que coincidan con la búsqueda.</div>':`<div class="empty">${emptyMsg}</div>`);
+  applyTaskSearch();
 }
 function rCats(){
   if(document.activeElement!==$('#clText'))$('#clText').value=clauses();
@@ -457,11 +576,16 @@ const open_=c=>c.estado==='abierta'&&(!c.cierre||c.cierre>=new Date().toISOStrin
 
 document.addEventListener('click',e=>{
   const v=e.target.closest('[data-v]');if(v&&!run){view=v.dataset.v;convSel=null;render();return}
+  const accountButton=e.target.closest('[data-payroll-accounts]');
+  if(accountButton){void loadPayrollAccounts(accountButton);return}
+  const pdfButton=e.target.closest('[data-payroll-pdf]');
+  if(pdfButton){void downloadPayrollPdf(Number(pdfButton.dataset.payrollPdf));return}
   const payrollPeriod=e.target.closest('[data-payroll-period]');
   if(payrollPeriod){void loadPayroll(payrollPeriod.dataset.payrollPeriod,true);return}
   const a=e.target.closest('[data-act]');if(!a||!db)return;const act=a.dataset.act,id=a.dataset.id;
   if(act==='payroll-refresh'){void loadPayroll($('#payroll-period')?.value||'',true);return}
   if(act==='payroll-config-save'){void savePayrollConfig(a);return}
+  if(act==='payroll-issue'){void issuePayroll(a);return}
   if(act==='insc'){if(!$('#chk-'+id)?.checked)return toast('Marca la declaración de requisitos');
     w(()=>db.doc(`aspirantes/${uid}/inscripciones/${id}`).set({convId:id,at:new Date().toISOString()}),'Inscripción registrada')}
   else if(act==='pruebas'){convSel=id;view='conv';render()}
@@ -472,10 +596,16 @@ document.addEventListener('click',e=>{
   else if(isAdmin)adminAct(act,id,a);
 });
 document.addEventListener('submit',e=>{
-  if(e.target?.id!=='payrollConfigForm')return;
-  e.preventDefault();
-  const button=e.target.querySelector('button[type="submit"]');
-  if(button)void savePayrollConfig(button);
+  if(e.target?.id==='payrollConfigForm'){
+    e.preventDefault();
+    const button=e.target.querySelector('button[type="submit"]');
+    if(button)void savePayrollConfig(button);
+    return;
+  }
+  if(e.target?.matches('[data-payroll-account-form]')){
+    e.preventDefault();
+    void savePayrollAccount(e.target);
+  }
 });
 
 function intentosDe(cid,aid){return S.int.filter(i=>i.convId===cid&&i.amb===aid)}
@@ -492,6 +622,8 @@ let payrollRendered=false;
 const payrollCache={period:'',data:null,error:null,request:null};
 const payrollMonth=()=>new Date().toISOString().slice(0,7);
 const pz=value=>`${new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(value)||0)} Pz`;
+const payrollAccountKey=contract=>`payroll-account-${String(contract.employeeDip||'').replace(/[^a-zA-Z0-9_-]/g,'')}-${String(contract.id||'').replace(/[^a-zA-Z0-9_-]/g,'')}`;
+const canSetPayrollIban=contract=>isAdmin||(contract.employeeDip===uid&&S.res.some(result=>result.estado==='plaza'));
 const payrollErrors={
   bank_not_configured:'Falta configurar la clave CRM del Banco en Vercel.',
   bank_url_invalid:'La URL del servicio de nóminas en Vercel no es válida.',
@@ -503,17 +635,23 @@ const payrollErrors={
   missing_session:'Tu sesión ha caducado. Vuelve a entrar con PlacetaID.',
   invalid_session:'Tu sesión no es válida. Vuelve a entrar con PlacetaID.',
   forbidden:'Tu cuenta no tiene permiso para esta operación.',
-  database_error:'El Banco no pudo consultar sus datos. Revisa la conexión con la base de datos.'
+  database_error:'El Banco no pudo consultar sus datos. Revisa la conexión con la base de datos.',
+  account_not_owned:'El IBAN elegido no pertenece a la persona indicada.',
+  no_contract:'No hay un contrato de nómina para esta persona.',
+  invalid_period:'El periodo de nómina no es válido.',
+  account_required:'Selecciona una cuenta destino.',
+  unsupported_action:'La operación solicitada no está disponible.'
 };
 function payrollError(error){return payrollErrors[error?.message]||'No se pudieron cargar las nóminas. Inténtalo de nuevo manualmente.'}
 function payrollConfigForm(config={}){
   const ial=config.ial||{};
   return `<article class="card"><h3>Configuración global</h3><p class="meta">Estos parámetros se guardan en el Banco y afectan a los siguientes cálculos. Los cambios de pagos automáticos pueden iniciar transferencias al vencer el plazo.</p><form id="payrollConfigForm"><div class="payroll-config">
-    <div class="f"><label for="payroll-cutoff">Día de cierre (1–28)</label><input id="payroll-cutoff" name="cutoffDay" type="number" min="1" max="28" required value="${esc(config.cutoffDay??25)}"></div>
+    <div class="f"><label for="payroll-cutoff">Día de cierre personalizado (1–28)</label><input id="payroll-cutoff" name="cutoffDay" type="number" min="1" max="28" required value="${esc(config.cutoffDay??25)}"></div>
     <div class="f"><label for="payroll-retention">Retención del trabajador (%)</label><input id="payroll-retention" name="retencionPct" type="number" min="0" max="35" step="0.01" required value="${esc(config.retencionPct??12)}"></div>
     <div class="f"><label for="payroll-smi">SMI mensual (Pz)</label><input id="payroll-smi" name="smiMensualPz" type="number" min="0" step="0.01" required value="${esc(config.smiMensualPz??150)}"></div>
     <label class="check"><input name="activo" type="checkbox"${config.activo!==false?' checked':''}> Nóminas activas</label>
     <label class="check"><input name="autoPago" type="checkbox"${config.autoPago!==false?' checked':''}> Pago automático al cierre</label>
+    <label class="check"><input name="cierreFinDeMes" type="checkbox"${config.cierreFinDeMes!==false?' checked':''}> Cerrar al último día de cada mes</label>
   </div><h3>Desglose IAL (%)</h3><div class="payroll-config">
     <div class="f"><label>IAL empleador</label><input name="ial.empleadorPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.empleadorPct??12)}"></div>
     <div class="f"><label>IAL trabajador</label><input name="ial.trabajadorPct" type="number" min="0" max="100" step="0.01" value="${esc(ial.trabajadorPct??12)}"></div>
@@ -526,7 +664,7 @@ function payrollConfigForm(config={}){
 function payrollDetails(data){
   const summaries=data.resumenes||[];
   if(!summaries.length)return '<div class="empty">No hay contratos ni nóminas para este periodo.</div>';
-  return summaries.map(item=>{
+  return summaries.map((item,index)=>{
     const contract=item.contrato||{};
     const period=item.periodoDoc||item;
     const lines=period.lineas||item.lineas||[];
@@ -538,6 +676,7 @@ function payrollDetails(data){
       <div class="payroll-breakdown"><p class="payroll-total">Base ${pz(period.basePz??item.basePz)} · Complementos fijos ${pz(period.complementosFijosPz??item.complementosFijosPz)} · Actividad ${pz(period.complementosActividadPz??item.complementosActividadPz)}</p>
       <p>Bruto ${pz(period.brutoPz??item.brutoPz)} · Retención (${esc(period.retencionPct??item.retencionPct)}%) ${pz(period.retencionesPz??item.retencionesPz)} · <strong>Neto ${pz(period.netoPz??item.netoPz)}</strong></p>
       <p>IAL empleador ${pz(employer.totalPz)} (valorización ${pz(employer.valorizacionPz)} · Banco ${pz(employer.bancoPz)}) · IAL trabajador ${pz(employee.totalPz)} (antigüedad ${pz(employee.antiguedadPz)} · Banco ${pz(employee.bancoPz)})</p></div>
+      <div class="payroll-actions"><button class="btn sm sec" type="button" data-payroll-pdf="${index}">Descargar PDF</button>${canSetPayrollIban(contract)?`<div id="${payrollAccountKey(contract)}"><button class="btn sm sec" type="button" data-payroll-accounts="${esc(contract.employeeDip||'')}" data-contract-id="${esc(contract.id||'')}" data-current-account="${esc(contract.employeeAccountId||'')}">Configurar IBAN destino</button></div>`:''}</div>
     </details></article>`;
   }).join('');
 }
@@ -551,10 +690,70 @@ function renderPayrollData(){
   const contracts=data.contratos||[];
   state.innerHTML=`<div class="payroll-toolbar"><div class="f"><label for="payroll-period">Periodo</label><input id="payroll-period" type="month" value="${esc(payrollCache.period||data.periodo||payrollMonth())}"></div><button class="btn sec" type="button" data-act="payroll-refresh">Cargar periodo</button><span class="meta">Los datos se consultan al entrar aquí o al pulsar «Cargar periodo»; no hay sondeos de nóminas.</span></div>
     <div class="kpis payroll-info"><div class="kpi"><b>${periods.length}</b><span class="meta">periodos registrados</span></div><div class="kpi"><b>${contracts.length}</b><span class="meta">contratos</span></div><div class="kpi"><b>${esc(data.periodo||payrollCache.period||'—')}</b><span class="meta">periodo consultado</span></div></div>
+    ${isPres?`<article class="card"><h3>Emisión de nóminas</h3><p class="meta">La Presidencia puede cerrar el periodo seleccionado y ordenar el pago inmediato desde las cuentas de empresa. Comprueba contratos y los IBAN de destino antes de confirmar.</p><button class="btn ok" type="button" data-act="payroll-issue">Cerrar y emitir con pago · ${esc(payrollCache.period||data.periodo||'')}</button></article>`:''}
     ${isAdmin?payrollConfigForm(data.config):''}
     <article class="card"><h3>Nóminas y desglose por contrato</h3>${payrollDetails(data)}</article>
     <article class="card"><h3>Periodos registrados</h3>${periods.length?`<div class="tw"><table><thead><tr><th>Periodo</th><th>Trabajador/a</th><th>Estado</th><th>Bruto</th><th>Neto</th><th></th></tr></thead><tbody>${periods.map(period=>`<tr><td class="payroll-period">${esc(period.periodo||'—')}</td><td>${esc(period.employeeName||period.employeeDip||period.contractId||'—')}</td><td>${esc(period.status||'—')}</td><td>${pz(period.brutoPz)}</td><td>${pz(period.netoPz)}</td><td><button class="btn sm sec" type="button" data-payroll-period="${esc(period.periodo||'')}">Ver desglose</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="meta">Aún no hay periodos de nómina generados.</p>'}</article>
     ${isAdmin?`<article class="card"><h3>Contratos configurados</h3>${contracts.length?`<div class="tw"><table><thead><tr><th>Trabajador/a</th><th>Empresa</th><th>Estado</th><th>Salario base</th><th>Jornada</th><th>Complementos</th></tr></thead><tbody>${contracts.map(c=>`<tr><td>${esc(c.employeeName||c.employeeDip||'—')}<br><span class="meta">${esc(c.employeeDip||'')}</span></td><td>${esc(c.companyAccountId||'—')}</td><td>${esc(c.status||'—')}</td><td>${pz(c.grossSalaryPz)}</td><td>${esc(c.workloadPct??100)}%</td><td>${(c.complementos||[]).map(x=>`${esc(x.concepto||'Complemento')}: ${pz(x.importePz)}${x.activo===false?' (inactivo)':''}`).join('<br>')||'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="meta">No hay contratos configurados.</p>'}</article>`:''}`;
+}
+async function loadPayrollAccounts(button){
+  const dip=button.dataset.payrollAccounts;
+  const contractId=button.dataset.contractId;
+  const currentAccount=button.dataset.currentAccount;
+  const container=document.getElementById(payrollAccountKey({employeeDip:dip,id:contractId}));
+  if(!container||!dip)return;
+  button.disabled=true;
+  try{
+    const query=new URLSearchParams({action:'cuentas',employeeDip:dip});
+    const response=await fetch(`/api/banco-nominas?${query}`,{credentials:'same-origin',cache:'no-store'});
+    const result=await response.json().catch(()=>({error:'request_failed'}));
+    if(!response.ok)throw new Error(result.error||'request_failed');
+    const accounts=result.accounts||[];
+    container.innerHTML=accounts.length?`<form data-payroll-account-form data-employee-dip="${esc(dip)}"><label class="meta">IBAN de destino<select name="employeeAccountId" required><option value="">Selecciona una cuenta propia</option>${accounts.map(account=>`<option value="${esc(account.id)}"${account.id===currentAccount?' selected':''}>${esc(account.iban)} · ${esc(account.label)}${account.primary?' · principal':''}</option>`).join('')}</select></label><div class="payroll-actions"><button class="btn sm ok" type="submit">Guardar IBAN</button><span class="meta">Solo cuentas verificadas como titular de este DIP.</span></div></form>`:'<p class="meta">El Banco no encuentra cuentas propias con IBAN para este DIP.</p>';
+  }catch(error){container.innerHTML=`<p class="warn">${esc(payrollError(error))}</p>`}
+  finally{button.disabled=false}
+}
+async function savePayrollAccount(form){
+  const employeeDip=form.dataset.employeeDip;
+  const employeeAccountId=new FormData(form).get('employeeAccountId');
+  if(!employeeAccountId)return toast('Selecciona un IBAN de destino');
+  const button=form.querySelector('button[type="submit"]');
+  if(button)button.disabled=true;
+  try{
+    const response=await fetch('/api/banco-nominas',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'cuenta-trabajador',employeeDip,employeeAccountId})});
+    const result=await response.json().catch(()=>({error:'request_failed'}));
+    if(!response.ok)throw new Error(result.error||'request_failed');
+    toast(`IBAN guardado · ${result.contratosActualizados} contrato(s), ${result.periodosActualizados} nómina(s) pendiente(s) actualizados`);
+    await loadPayroll(payrollCache.period,true);
+  }catch(error){toast(payrollError(error))}
+  finally{if(button)button.disabled=false}
+}
+async function downloadPayrollPdf(index){
+  const summary=payrollCache.data?.resumenes?.[index];
+  if(!summary)return toast('No hay desglose de nómina para descargar');
+  if(typeof window.generatePayrollPdf!=='function')return toast('El generador PDF no está disponible. Recarga Nexe.');
+  try{await window.generatePayrollPdf({contract:summary.contrato||{},summary,period:summary.periodo||payrollCache.period});toast('PDF de nómina descargado')}
+  catch(error){console.error('No se pudo generar el PDF de nómina:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}
+}
+async function issuePayroll(button){
+  if(!isPres)return toast('Solo Presidencia puede emitir nóminas');
+  const periodo=payrollCache.period||payrollCache.data?.periodo;
+  if(!periodo)return toast('Selecciona un periodo de nómina');
+  if(!confirm(`Se cerrará ${periodo} y el Banco ordenará el pago inmediato de las nóminas de todos los contratos activos. Asegúrate de que los IBAN destino estén configurados. ¿Continuar?`))return;
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/banco-nominas',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'cerrar',periodo,pagar:true})});
+    const result=await response.json().catch(()=>({error:response.status===504?'bank_timeout':'request_failed'}));
+    if(!response.ok)throw new Error(result.error||'request_failed');
+    const outcomes=result.resultados||[];
+    const paid=outcomes.filter(item=>item.pagado).length;
+    const failed=outcomes.length-paid;
+    if(!outcomes.length)toast('No hay contratos activos que emitir en este periodo');
+    else if(failed)toast(`Cierre completado: ${paid}/${outcomes.length} pagos; ${failed} requieren revisión`);
+    else toast(`Periodo ${periodo} cerrado · ${paid} nómina(s) pagada(s)`);
+    await loadPayroll(periodo,true);
+  }catch(error){toast(payrollError(error))}
+  finally{button.disabled=false}
 }
 async function loadPayroll(period='',force=false){
   const selected=period||payrollMonth();
@@ -581,6 +780,7 @@ async function savePayrollConfig(button){
   const values=new FormData(form),number=name=>Number(values.get(name));
   const config={
     cutoffDay:number('cutoffDay'),
+    cierreFinDeMes:values.has('cierreFinDeMes'),
     retencionPct:number('retencionPct'),
     smiMensualPz:number('smiMensualPz'),
     activo:values.has('activo'),

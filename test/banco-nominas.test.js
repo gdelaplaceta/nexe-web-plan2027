@@ -190,7 +190,7 @@ test('administration can persist payroll configuration through the Bank API', as
     const res = responseMock();
     await handler({
       method: 'POST',
-      headers: { cookie: signedCookie('12345678Z') },
+      headers: { cookie: signedCookie('12345678Z'), host: 'nexe.example', origin: 'https://nexe.example' },
       body: config,
       query: {},
     }, res);
@@ -219,13 +219,128 @@ test('payroll mutations are restricted to administration and presidency', async 
     const res = responseMock();
     await handler({
       method: 'POST',
-      headers: { cookie: signedCookie('12345678Z') },
-      body: { action: 'pagar' },
+      headers: { cookie: signedCookie('12345678Z'), host: 'nexe.example', origin: 'https://nexe.example' },
+      body: { action: 'cerrar', periodo: '2026-10', pagar: true },
       query: {},
     }, res);
 
     assert.equal(res.statusCode, 403);
     assert.equal(res.body.error, 'forbidden');
+    assert.equal(bankCalled, false);
+  });
+});
+
+test('only presidency can close a period and request immediate payment', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    let bankRequest;
+    globalThis.fetch = async (input, init = {}) => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      if (url.hostname === 'supabase.example') return supabaseProfile('presidencia')(input);
+      bankRequest = { url, init };
+      return new Response('{"periodo":"2026-10","pagar":true,"resultados":[]}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const res = responseMock();
+    await handler({
+      method: 'POST',
+      headers: { cookie: signedCookie('12345678Z'), host: 'nexe.example', origin: 'https://nexe.example' },
+      body: { action: 'cerrar', periodo: '2026-10', pagar: true, autor: 'forged' },
+      query: {},
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(JSON.parse(bankRequest.init.body), {
+      action: 'cerrar',
+      periodo: '2026-10',
+      pagar: true,
+      autor: '12345678Z',
+    });
+  });
+});
+
+test('a person with an awarded place can only view their own payout accounts', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    let bankRequest;
+    let readPlace = true;
+    globalThis.fetch = async (input, init = {}) => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      if (url.hostname === 'supabase.example' && url.pathname === '/rest/v1/nexe_profiles') return supabaseProfile('aspirante')(input);
+      if (url.hostname === 'supabase.example' && url.pathname === '/rest/v1/nexe_documents') {
+        return new Response(JSON.stringify(readPlace ? [{ payload: { estado: 'plaza' } }] : []), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      bankRequest = { url, init };
+      return new Response('{"accounts":[{"id":"account-1","iban":"GDLP-AP01-001"}]}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const own = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: { action: 'cuentas', employeeDip: '12345678Z' },
+    }, own);
+    assert.equal(own.statusCode, 200);
+    assert.equal(bankRequest.url.searchParams.get('employeeDip'), '12345678Z');
+    assert.equal(bankRequest.url.searchParams.get('action'), 'cuentas');
+
+    const otherPerson = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: { action: 'cuentas', employeeDip: '87654321X' },
+    }, otherPerson);
+    assert.equal(otherPerson.statusCode, 403);
+    assert.equal(bankRequest.url.searchParams.get('employeeDip'), '12345678Z');
+
+    readPlace = false;
+    const noPlace = responseMock();
+    await handler({
+      method: 'GET',
+      headers: { cookie: signedCookie('12345678Z') },
+      query: { action: 'cuentas', employeeDip: '12345678Z' },
+    }, noPlace);
+    assert.equal(noPlace.statusCode, 403);
+  });
+});
+
+test('cross-origin payroll payment requests are rejected before reaching the Bank', async () => {
+  await withEnvironment({
+    NEXE_SESSION_SECRET: sessionSecret,
+    SUPABASE_URL: 'https://supabase.example',
+    SUPABASE_SECRET_KEY: 'server-secret-test',
+    BANCO_CRM_KEY: 'private-crm-test-key',
+  }, async () => {
+    let bankCalled = false;
+    globalThis.fetch = async input => {
+      const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+      if (url.hostname === 'supabase.example') return supabaseProfile('presidencia')(input);
+      bankCalled = true;
+      return new Response('{}', { status: 200 });
+    };
+    const res = responseMock();
+    await handler({
+      method: 'POST',
+      headers: { cookie: signedCookie('12345678Z'), host: 'nexe.example', origin: 'https://attacker.example' },
+      body: { action: 'cerrar', periodo: '2026-10', pagar: true },
+      query: {},
+    }, res);
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.error, 'invalid_origin');
     assert.equal(bankCalled, false);
   });
 });
