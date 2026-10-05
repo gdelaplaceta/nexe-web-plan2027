@@ -9,7 +9,7 @@ export default function handler(req, res) {
   const state = crypto.randomBytes(24).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(state).digest('base64url');
   res.setHeader('Set-Cookie', `nexe_oauth_state=${state}.${sig}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`);
-  const url = new URL('/api/auth/fase1', base);
+  const url = new URL('/', base);
   url.searchParams.set('from', redirect()); url.searchParams.set('client_id', clientId); url.searchParams.set('state', state); url.searchParams.set('platform', 'web'); url.searchParams.set('service', 'Nexe');
   res.redirect(url.toString());
 }
