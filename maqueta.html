@@ -430,6 +430,13 @@ const S={conv:[],q:[],insc:[],int:[],notas:[],res:[]};
 const slug=t=>norm(t).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'x';
 const lines=t=>String(t||'').split('\n').map(x=>x.trim()).filter(Boolean);
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)};
+const callbackParams=new URLSearchParams(location.search);
+if(callbackParams.get('placetaid_sync')==='warning'){
+  callbackParams.delete('placetaid_sync');
+  const query=callbackParams.toString();
+  history.replaceState(null,'',location.pathname+(query?`?${query}`:'')+location.hash);
+  setTimeout(()=>toast('Has iniciado sesión. No se pudieron sincronizar algunos datos del perfil.'),0);
+}
 const w=async(fn,ok)=>{try{await fn();if(ok)toast(ok)}catch(e){toast('No se pudo guardar: '+(e.message||e.code||'error'))}};
 const conv=id=>S.conv.find(c=>c.id===id);
 const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');

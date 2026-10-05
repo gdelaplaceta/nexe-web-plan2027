@@ -110,7 +110,8 @@ export default async function handler(req, res) {
       }
       return sendCallbackMessage(res, 502, 'No se pudo validar el acceso', 'PlacetaID no ha podido confirmar esta autorización. Inicia un nuevo intento desde Nexe.');
     }
-  } catch {
+  } catch (error) {
+    console.error('[Nexe PlacetaID exchange]', error?.name || 'PLACETAID_UNAVAILABLE');
     clearStateCookie(res);
     return sendCallbackMessage(res, 502, 'No se pudo conectar con PlacetaID', 'Comprueba tu conexión e inténtalo de nuevo. No se ha iniciado sesión en Nexe.');
   }
@@ -127,38 +128,66 @@ export default async function handler(req, res) {
     );
   }
 
+  let sb;
+  let profile;
   try {
-    const sb = serverSupabase();
-    const { data: profile, error: profileError } = await sb.from('nexe_profiles')
+    sb = serverSupabase();
+    const result = await sb.from('nexe_profiles')
       .select('id,dip,nombre,activo')
       .eq('dip', dip)
       .maybeSingle();
-    if (profileError) throw profileError;
-    if (!profile || !profile.activo) {
-      clearStateCookie(res);
-      return sendCallbackMessage(res, 403, 'No hay una cuenta activa en Nexe', 'La identidad de PlacetaID no está vinculada a una cuenta activa. Contacta con Administración de Nexe si necesitas ayuda.', false);
-    }
+    if (result.error) throw result.error;
+    profile = result.data;
+  } catch (error) {
+    console.error('[Nexe PlacetaID callback] PROFILE_LOOKUP_FAILED', error?.code || 'SUPABASE_UNAVAILABLE');
+    clearStateCookie(res);
+    return sendCallbackMessage(res, 503, 'No se pudo comprobar la cuenta de Nexe', 'Nexe no pudo consultar el perfil de usuario en Supabase. Comprueba la configuración del servidor e inténtalo de nuevo más tarde.');
+  }
 
-    const fullName = [claims.name, claims.surname].filter(Boolean).join(' ').trim();
-    const { error: updateError } = await sb.from('nexe_profiles')
+  if (!profile || !profile.activo) {
+    clearStateCookie(res);
+    return sendCallbackMessage(res, 403, 'No hay una cuenta activa en Nexe', 'La identidad de PlacetaID no está vinculada a una cuenta activa. Contacta con Administración de Nexe si necesitas ayuda.', false);
+  }
+
+  const fullName = [claims.name, claims.surname].filter(Boolean).join(' ').trim();
+  let profileSyncWarning = false;
+  try {
+    let { data: updatedProfile, error: updateError } = await sb.from('nexe_profiles')
       .update({
         nombre: fullName || profile.nombre,
         datos_placetaid: claims,
         placetaid_synced_at: new Date().toISOString(),
       })
-      .eq('id', profile.id);
+      .eq('id', profile.id)
+      .select('id')
+      .maybeSingle();
+    if (['42703', 'PGRST204'].includes(updateError?.code)) {
+      profileSyncWarning = true;
+      console.error('[Nexe PlacetaID callback] PROFILE_OPTIONAL_SYNC_UNAVAILABLE', updateError.code);
+      ({ data: updatedProfile, error: updateError } = await sb.from('nexe_profiles')
+        .update({ nombre: fullName || profile.nombre })
+        .eq('id', profile.id)
+        .select('id')
+        .maybeSingle());
+    }
     if (updateError) throw updateError;
+    if (!updatedProfile) throw new Error('PROFILE_UPDATE_NOT_APPLIED');
+  } catch (error) {
+    profileSyncWarning = true;
+    console.error('[Nexe PlacetaID callback] PROFILE_SYNC_FAILED', error?.code || 'PROFILE_SYNC_FAILED');
+  }
 
+  try {
     const payload = Buffer.from(JSON.stringify({ dip, iat: Date.now() })).toString('base64url');
     const signature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('base64url');
     res.setHeader('Set-Cookie', [
       'nexe_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
       `nexe_session=${payload}.${signature}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`,
     ]);
-    return res.redirect('/');
+    return res.redirect(profileSyncWarning ? '/?placetaid_sync=warning' : '/');
   } catch (error) {
-    console.error('[Nexe PlacetaID callback]', error?.code || 'PROFILE_SYNC_FAILED');
+    console.error('[Nexe PlacetaID callback] SESSION_CREATE_FAILED', error?.code || 'SESSION_CREATE_FAILED');
     clearStateCookie(res);
-    return sendCallbackMessage(res, 503, 'No se pudo completar el acceso', 'Nexe no pudo actualizar tu identidad en este momento. Inténtalo de nuevo más tarde.');
+    return sendCallbackMessage(res, 503, 'No se pudo completar el acceso', 'Nexe no pudo iniciar una sesión en este momento. Inténtalo de nuevo más tarde.');
   }
 }
