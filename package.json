@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vercel dev",
     "check": "node --check api/banco-nominas.js",
+    "test": "node --test",
     "build:agreement-pdf": "esbuild src/agreement-pdf.js --bundle --format=iife --minify --target=es2020 --outfile=agreement-pdf.js"
   },
   "dependencies": {

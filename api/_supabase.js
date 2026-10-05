@@ -32,8 +32,9 @@ export async function requireUser(req) {
     if (!payload || !signature || signature !== expected) throw new Error('missing_session');
     const session = JSON.parse(Buffer.from(payload, 'base64url').toString());
     if (!session.dip || Date.now() - Number(session.iat || 0) > 8 * 60 * 60 * 1000) throw new Error('invalid_session');
-    const { data: profile } = await sb.from('nexe_profiles').select('id,dip,nombre,rol').eq('dip', session.dip).maybeSingle();
-    if (!profile) throw new Error('profile_not_registered');
+    const { data: profile, error } = await sb.from('nexe_profiles').select('id,dip,nombre,rol,activo').eq('dip', session.dip).maybeSingle();
+    if (error) throw error;
+    if (!profile || !profile.activo) throw new Error('invalid_session');
     return { sb, user: { id: profile.id, dip: profile.dip, user_metadata: { name: profile.nombre }, role: profile.rol } };
   }
   const { data, error } = await sb.auth.getUser(token);

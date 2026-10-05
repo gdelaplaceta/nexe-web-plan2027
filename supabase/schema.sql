@@ -19,9 +19,38 @@ create table if not exists public.nexe_profiles (
   rsp_verificado_at timestamptz,
   datos_placetaid jsonb not null default '{}'::jsonb,
   placetaid_synced_at timestamptz,
+  terminos_version text,
+  terminos_accepted_at timestamptz,
+  privacidad_version text,
+  privacidad_acknowledged_at timestamptz,
   activo boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table public.nexe_profiles
+  add column if not exists terminos_version text,
+  add column if not exists terminos_accepted_at timestamptz,
+  add column if not exists privacidad_version text,
+  add column if not exists privacidad_acknowledged_at timestamptz;
+alter table public.nexe_profiles alter column id set default gen_random_uuid();
+
+-- Previous Nexe schemas tied these PlacetaID profiles to Supabase Auth users.
+-- Nexe now owns the session and maps it to a profile by DIP.
+do $$ declare
+  constraint_name text;
+begin
+  for constraint_name in
+    select c.conname
+    from pg_constraint c
+    join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any(c.conkey)
+    where c.conrelid = 'public.nexe_profiles'::regclass
+      and c.confrelid = 'auth.users'::regclass
+      and c.contype = 'f'
+      and a.attname = 'id'
+  loop
+    execute format('alter table public.nexe_profiles drop constraint %I', constraint_name);
+  end loop;
+end $$;
 
 create or replace function public.nexe_is_president()
 returns boolean
@@ -45,6 +74,7 @@ $$;
 -- resolves PlacetaID sessions to nexe_profiles.id.
 do $$ declare
   table_name text;
+  constraint_name text;
 begin
   foreach table_name in array array[
     'departments', 'projects', 'tasks', 'task_comments', 'calls', 'tests',
@@ -59,6 +89,44 @@ begin
       )',
       table_name
     );
+    execute format(
+      'alter table public.nexe_%I add column if not exists owner_id uuid',
+      table_name
+    );
+    execute format(
+      'alter table public.nexe_%I add column if not exists payload jsonb not null default ''{}''::jsonb',
+      table_name
+    );
+    execute format(
+      'alter table public.nexe_%I add column if not exists created_at timestamptz not null default now()',
+      table_name
+    );
+    for constraint_name in
+      select c.conname
+      from pg_constraint c
+      join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any(c.conkey)
+      where c.conrelid = format('public.nexe_%I', table_name)::regclass
+        and c.confrelid = 'auth.users'::regclass
+        and c.contype = 'f'
+        and a.attname = 'owner_id'
+    loop
+      execute format('alter table public.nexe_%I drop constraint %I', table_name, constraint_name);
+    end loop;
+    if not exists (
+      select 1
+      from pg_constraint c
+      join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any(c.conkey)
+      where c.conrelid = format('public.nexe_%I', table_name)::regclass
+        and c.confrelid = 'public.nexe_profiles'::regclass
+        and c.contype = 'f'
+        and a.attname = 'owner_id'
+    ) then
+      execute format(
+        'alter table public.nexe_%I add constraint %I foreign key (owner_id) references public.nexe_profiles(id) not valid',
+        table_name,
+        'nexe_' || table_name || '_owner_profile_fkey'
+      );
+    end if;
     execute format('alter table public.nexe_%I enable row level security', table_name);
     execute format('drop policy if exists %I on public.nexe_%I', 'nexe ' || table_name || ' read', table_name);
     execute format(
@@ -86,7 +154,5 @@ create policy "profiles own update"
   using (id = auth.uid())
   with check (id = auth.uid() and rol = 'aspirante');
 
--- Register only accounts that have been approved to use Nexe. For example:
--- insert into public.nexe_profiles (dip, nombre, rol, activo)
--- values ('DIP_VALIDADO', 'Nombre autorizado', 'aspirante', true);
--- Do not enable accounts automatically in the OAuth callback.
+-- New aspirant accounts are inserted only after explicit acceptance of the
+-- current Nexe terms and acknowledgment of the privacy notice.
