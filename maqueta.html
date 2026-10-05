@@ -255,6 +255,7 @@ h1,h2,h3{font-family:"Baruta","Bricolage Grotesque",system-ui,sans-serif;font-we
   <section id="s-dash" hidden><div id="dash"></div></section>
   <section id="s-profile" hidden><div id="profile"></div></section>
   <section id="s-team" hidden><div class="panel"><div class="meta">Cada persona aparece aquí tras su primer acceso. Marca los proyectos en los que trabaja: solo verá y podrá coger tareas de esos proyectos.</div></div><div id="tmlist"></div></section>
+  <section id="s-agreements" hidden><div id="agreement-list"></div></section>
   <section id="s-cats" hidden>
     <div class="panel"><div class="meta" style="margin-bottom:8px">Baremo de recompensas: cada categoría fija las Placetas de sus tareas. Al crear una tarea se copia el importe vigente: cambiarlo aquí no afecta a las tareas ya creadas.</div>
       <div class="row" style="margin:0"><input id="cName" placeholder="Nombre de la categoría" style="flex:3 1 220px"><input id="cReward" type="number" min="0" step="1" placeholder="Placetas"><button class="btn" data-act="addCat">Añadir categoría</button></div></div>
@@ -347,6 +348,8 @@ document.addEventListener('click',e=>{
   if(taskFilter){taskStatus=taskFilter.dataset.taskStatus;render();return}
   const nd=e.target.closest('[data-org],[data-all],[data-org-all]');
   if(nd){selOrg=nd.dataset.org||null;selProj=nd.dataset.proj||null;$('aside').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false');render();return}
+  const agreementButton=e.target.closest('[data-agreement-pdf]');
+  if(agreementButton){const agreement=S.acceptances.find(item=>item.id===agreementButton.dataset.agreementPdf);if(!agreement?.text)return toast('No se encontró el convenio aceptado');void window.downloadAgreement(agreement.text,agreement.signerDip||agreement.id,agreement.acceptedAt,true);return}
   const a=e.target.closest('[data-act]');if(!a||!db)return;
   const id=a.dataset.id,act=a.dataset.act;
   if(act==='mode'){mode=mode==='admin'?'worker':'admin';taskFormOpen=false;render();return}
@@ -396,11 +399,11 @@ function render(){
   if(!db||!document.getElementById('tree'))return;
   admin=isAdmin&&mode==='admin';
   updateGate();
-  const tabs=admin?[['dash','Resumen'],['tasks','Tareas'],['team','Equipo'],['cats','Baremos'],['inc','Incidencias'],['pay','Complemento'],['profile','Mi perfil']]:[['mine','Mis tareas'],['tasks','Disponibles'],['inc','Incidencias'],['pay','Mi complemento'],['profile','Mi perfil']];
+  const tabs=admin?[['dash','Resumen'],['tasks','Tareas'],['team','Equipo'],['agreements','Convenios'],['cats','Baremos'],['inc','Incidencias'],['pay','Complemento'],['profile','Mi perfil']]:[['mine','Mis tareas'],['tasks','Disponibles'],['inc','Incidencias'],['pay','Mi complemento'],['profile','Mi perfil']];
   if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];
   $('#tabs').innerHTML=tabs.map(([k,l])=>`<button class="tab ${k===tab?'on':''}" data-tab="${k}">${l}</button>`).join('');
-  const sec={dash:'dash',profile:'profile',cats:'cats',team:'team',mine:'tasks',tasks:'tasks',inc:'inc',pay:'pay'}[tab];
-  ['dash','profile','cats','team','tasks','inc','pay'].forEach(k=>$('#s-'+k).hidden=k!==sec);
+  const sec={dash:'dash',profile:'profile',cats:'cats',team:'team',agreements:'agreements',mine:'tasks',tasks:'tasks',inc:'inc',pay:'pay'}[tab];
+  ['dash','profile','cats','team','agreements','tasks','inc','pay'].forEach(k=>$('#s-'+k).hidden=k!==sec);
   $('#who').textContent=(admin?'Vista administración':'Vista trabajador')+(names[meId]?' · '+names[meId]:'');
   $('#mode').hidden=!isAdmin;$('#mode').textContent=admin?'Ver como trabajador':'Volver a vista admin';
   $('#adm').hidden=!admin;
@@ -423,7 +426,7 @@ function render(){
   opts($('#tProj'),pl,'Crea un proyecto');
   opts($('#tCat'),S.categories.map(c=>[c.id,c.name+' · '+(c.reward||0)+' P']),'Crea una categoría');
   opts($('#iProj'),[['','Sin proyecto concreto'],...pl],'');
-  if(tab==='dash')rDash();else if(tab==='profile')rProfile();else if(tab==='inc')rInc();else if(tab==='pay')rPay();else if(tab==='cats')rCats();else if(tab==='team')rTeam();else rTasks();
+  if(tab==='dash')rDash();else if(tab==='profile')rProfile();else if(tab==='inc')rInc();else if(tab==='pay')rPay();else if(tab==='cats')rCats();else if(tab==='team')rTeam();else if(tab==='agreements')rAgreements();else rTasks();
   resolveNames();
 }
 const asg=id=>S.assignments.find(a=>a.id===id)?.projectIds||[];
@@ -481,6 +484,10 @@ function rTeam(){
     return `<div class="panel"><h2>${esc(m.name)}${m.id===meId?' (tú)':''} <span class="meta">· ${cur.size} proyecto${cur.size===1?'':'s'}</span></h2>${convStatus(m.id)}`+
     S.orgs.map(o=>{const ps=S.projects.filter(p=>p.orgId===o.id);return ps.length?`<div style="margin-bottom:6px"><b>${esc(o.name)}</b><div class="row" style="margin:4px 0 0">${ps.map(p=>`<label style="flex:0 1 auto;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-asg="${m.id}" value="${p.id}" ${cur.has(p.id)?'checked':''}>${esc(p.name)}</label>`).join('')}</div></div>`:''}).join('')+`</div>`}).join('');
 }
+function rAgreements(){
+  const accepted=[...S.acceptances].filter(a=>a.text&&a.acceptedAt).sort((a,b)=>String(b.acceptedAt).localeCompare(String(a.acceptedAt)));
+  $('#agreement-list').innerHTML=accepted.length?`<article class="panel"><h2>Convenios aceptados</h2><p class="meta">Documentos guardados por Nexe al aceptar las condiciones. Si cambiaron las cláusulas, el baremo o los proyectos asignados, el último convenio aceptado seguirá disponible y aparecerá como desactualizado.</p><div class="tw"><table><thead><tr><th>Colaborador</th><th>Versión</th><th>Aceptación</th><th>Estado</th><th></th></tr></thead><tbody>${accepted.map(a=>{const current=a.hash===convHash(a.id);return `<tr><td><b>${esc(a.name||names[a.id]||'Miembro')}</b><div class="meta">DIP ${esc(a.signerDip||a.id)}</div></td><td>${esc(a.version||'—')}</td><td>${esc(String(a.acceptedAt||'').replace('T',' ').slice(0,16))}</td><td><span class="st ${current?'approved':'review'}">${current?'Vigente':'Requiere nueva aceptación'}</span></td><td><button class="btn sm sec" type="button" data-agreement-pdf="${esc(a.id)}">Descargar PDF</button></td></tr><tr><td colspan="5"><details><summary>Ver texto aceptado</summary><pre class="doc">${esc(a.text)}</pre></details></td></tr>`}).join('')}</tbody></table></div></article>`:'<div class="empty">Todavía no hay convenios aceptados registrados.</div>';
+}
 function rDash(){
   const m=month(),rev=S.tasks.filter(t=>t.status==='review');
   const oi=S.incidents.filter(i=>i.status==='open').length,dn=S.tasks.filter(t=>t.status==='doing').length;
@@ -533,7 +540,7 @@ $('#gateChk').addEventListener('change',e=>{$('#gateBtn').disabled=!e.target.che
 $('#gatePdfBtn').addEventListener('click',()=>void window.downloadAgreement($('#gateDoc').textContent,meId,'Pendiente de aceptación',false));
 function convStatus(uid){
   const ps=myProjs(uid);if(!ps.length)return '';const a=S.acceptances.find(x=>x.id===uid),ok=a&&a.hash===convHash(uid);
-  return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" onclick="downloadAgreement(${JSON.stringify(a.text)},${JSON.stringify(a.signerDip||uid)},${JSON.stringify(a.acceptedAt)})">Descargar PDF</button></details>`:''}`;
+  return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" type="button" data-agreement-pdf="${esc(uid)}">Descargar PDF</button></details>`:''}`;
 }
 window.downloadAgreement=async(text,dip,at,signed=true)=>{if(typeof window.generateAgreementPdf!=='function')return toast('No está disponible el generador de PDF. Recarga Nexe e inténtalo de nuevo.');try{await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
 let resolving=false;
