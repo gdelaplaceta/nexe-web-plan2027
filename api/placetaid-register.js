@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 
   const expected = crypto.createHmac('sha256', secret).update(encoded).digest('base64url');
   if (!safeEqual(signature, expected)) {
-    res.setHeader('Set-Cookie', clearRegistrationCookie(res));
+    res.setHeader('Set-Cookie', clearRegistrationCookie());
     return sendError(res, 400, 'registration_expired');
   }
 
