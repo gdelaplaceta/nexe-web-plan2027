@@ -490,6 +490,7 @@ const RES={plaza:['¡Plaza adjudicada!','c-ok'],reserva:['Lista de reserva','c-w
 const gestor=cid=>S.res.find(x=>x.id===cid)?.estado==='plaza'?`<div class="card" style="background:rgba(47,125,91,.1);border-color:var(--ok)"><b>Tienes plaza.</b> Ya puedes acceder al gestor de tareas del Grupo de La Placeta.<div style="margin-top:8px"><button class="btn ok" data-v="tareas">Abrir gestor de tareas</button></div></div>`:'';
 let payrollRendered=false;
 const payrollCache={period:'',data:null,error:null,request:null};
+const payrollMonth=()=>new Date().toISOString().slice(0,7);
 const pz=value=>`${new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(value)||0)} Pz`;
 const payrollErrors={
   bank_not_configured:'Falta configurar la clave CRM del Banco en Vercel.',
@@ -548,7 +549,7 @@ function renderPayrollData(){
   if(!data){state.innerHTML='<div class="empty">Cargando datos de nómina…</div>';return}
   const periods=data.periodos||[];
   const contracts=data.contratos||[];
-  state.innerHTML=`<div class="payroll-toolbar"><div class="f"><label for="payroll-period">Periodo</label><input id="payroll-period" type="month" value="${esc(payrollCache.period||data.periodo||month())}"></div><button class="btn sec" type="button" data-act="payroll-refresh">Cargar periodo</button><span class="meta">Los datos se consultan al entrar aquí o al pulsar «Cargar periodo»; no hay sondeos de nóminas.</span></div>
+  state.innerHTML=`<div class="payroll-toolbar"><div class="f"><label for="payroll-period">Periodo</label><input id="payroll-period" type="month" value="${esc(payrollCache.period||data.periodo||payrollMonth())}"></div><button class="btn sec" type="button" data-act="payroll-refresh">Cargar periodo</button><span class="meta">Los datos se consultan al entrar aquí o al pulsar «Cargar periodo»; no hay sondeos de nóminas.</span></div>
     <div class="kpis payroll-info"><div class="kpi"><b>${periods.length}</b><span class="meta">periodos registrados</span></div><div class="kpi"><b>${contracts.length}</b><span class="meta">contratos</span></div><div class="kpi"><b>${esc(data.periodo||payrollCache.period||'—')}</b><span class="meta">periodo consultado</span></div></div>
     ${isAdmin?payrollConfigForm(data.config):''}
     <article class="card"><h3>Nóminas y desglose por contrato</h3>${payrollDetails(data)}</article>
@@ -556,7 +557,7 @@ function renderPayrollData(){
     ${isAdmin?`<article class="card"><h3>Contratos configurados</h3>${contracts.length?`<div class="tw"><table><thead><tr><th>Trabajador/a</th><th>Empresa</th><th>Estado</th><th>Salario base</th><th>Jornada</th><th>Complementos</th></tr></thead><tbody>${contracts.map(c=>`<tr><td>${esc(c.employeeName||c.employeeDip||'—')}<br><span class="meta">${esc(c.employeeDip||'')}</span></td><td>${esc(c.companyAccountId||'—')}</td><td>${esc(c.status||'—')}</td><td>${pz(c.grossSalaryPz)}</td><td>${esc(c.workloadPct??100)}%</td><td>${(c.complementos||[]).map(x=>`${esc(x.concepto||'Complemento')}: ${pz(x.importePz)}${x.activo===false?' (inactivo)':''}`).join('<br>')||'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="meta">No hay contratos configurados.</p>'}</article>`:''}`;
 }
 async function loadPayroll(period='',force=false){
-  const selected=period||month();
+  const selected=period||payrollMonth();
   if(payrollCache.request&&payrollCache.period===selected)return payrollCache.request;
   if(!force&&payrollCache.data&&payrollCache.period===selected){renderPayrollData();return}
   payrollCache.period=selected;payrollCache.data=null;payrollCache.error=null;renderPayrollData();
@@ -599,7 +600,7 @@ async function savePayrollConfig(button){
     const result=await response.json().catch(()=>({error:response.status===504?'bank_timeout':'request_failed'}));
     if(!response.ok)throw new Error(result.error||'request_failed');
     payrollCache.data=null;payrollCache.error=null;
-    await loadPayroll(payrollCache.period||month(),true);
+    await loadPayroll(payrollCache.period||payrollMonth(),true);
     toast('Configuración de nóminas guardada en el Banco');
   }catch(error){toast(payrollError(error))}
   finally{button.disabled=false}
@@ -608,7 +609,7 @@ function rNominas(){
   const m=$('#m');
   m.innerHTML='<article class="card"><h2>Nóminas y complementos de actividad</h2><p class="meta">Consulta tus nóminas y su desglose. Administración y Presidencia pueden gestionar los parámetros globales. No se realizan pagos desde esta pantalla.</p><div id="payrollState"></div></article>';
   renderPayrollData();
-  if(!payrollCache.data&&!payrollCache.request&&!payrollCache.error)void loadPayroll(month());
+  if(!payrollCache.data&&!payrollCache.request&&!payrollCache.error)void loadPayroll(payrollMonth());
 }
 const resChip=cid=>{const r=S.res.find(x=>x.id===cid);return r&&RES[r.estado]?`<span class="chip ${RES[r.estado][1]}">${RES[r.estado][0]}</span>`:''};
 function render(){
