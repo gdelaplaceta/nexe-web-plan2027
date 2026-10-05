@@ -12,6 +12,15 @@ export function bearer(req) {
   return value.startsWith('Bearer ') ? value.slice(7) : '';
 }
 
+export function cookie(req, name) {
+  for (const part of String(req.headers.cookie || '').split(';')) {
+    const separator = part.indexOf('=');
+    if (separator < 0 || part.slice(0, separator).trim() !== name) continue;
+    return part.slice(separator + 1).trim();
+  }
+  return '';
+}
+
 export async function requireUser(req) {
   const token = bearer(req);
   const sb = serverSupabase();
