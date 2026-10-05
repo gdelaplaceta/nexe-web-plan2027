@@ -209,6 +209,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
   <p class="meta" id="gateWhy"></p>
   <pre class="doc" id="gateDoc"></pre>
   <label><input type="checkbox" id="gateChk"><span>He leído el convenio y acepto sus condiciones, el baremo de recompensas y los equipos que se me asignan.</span></label>
+  <button class="btn sec" id="gatePdfBtn" type="button">Descargar borrador PDF</button>
   <button class="btn ok" id="gateBtn" data-act="accept" disabled>Aceptar convenio y continuar</button>
 </div></div>
 
@@ -216,6 +217,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;bord
 <main id="m"><div class="empty" id="boot">Cargando…</div></main>
 <div id="toast" role="status"></div>
 <footer class="legal"><details><summary>Información legal y privacidad</summary><p>Responsable: Grupo de La Placeta. Nexe gestiona convocatorias, tareas, complementos y nóminas con base en la relación contractual, el consentimiento cuando proceda y las obligaciones legales aplicables.</p><p>Conforme al RGPD (Reglamento (UE) 2016/679), puedes ejercer acceso, rectificación, supresión, oposición, limitación y portabilidad. Los datos de DIP, IBAN, actividad y pagos se usan solo para identidad, gestión laboral, auditoría y ejecución bancaria, con acceso restringido y conservación limitada.</p><p>La relación laboral se somete a la normativa española aplicable, incluido el Estatuto de los Trabajadores, la Ley Orgánica 3/2018 de protección de datos y garantía de derechos digitales, y la normativa de servicios de pago que corresponda. La emisión de pagos requiere IBAN de ambas partes, autorización del Banco de La Placeta y registro de auditoría. Nexe no muestra claves bancarias privadas.</p><p>Contacto y solicitudes de derechos: a través del canal oficial de administración del Grupo de La Placeta. La información no sustituye el asesoramiento jurídico.</p></details></footer>
+<script src="/agreement-pdf.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -395,11 +397,12 @@ function updateGate(){
   $('#gateWhy').textContent=S.acceptances.find(a=>a.id===meId)?'Ha cambiado el baremo, tus equipos o las cláusulas desde tu última aceptación. Para continuar debes aceptar la versión vigente.':'Para empezar a trabajar debes leer y aceptar el convenio vigente.';
 }
 $('#gateChk').addEventListener('change',e=>{$('#gateBtn').disabled=!e.target.checked});
+$('#gatePdfBtn').addEventListener('click',()=>void window.downloadAgreement($('#gateDoc').textContent,meId,'Pendiente de aceptación',false));
 function convStatus(uid){
   const ps=myProjs(uid);if(!ps.length)return '';const a=S.acceptances.find(x=>x.id===uid),ok=a&&a.hash===convHash(uid);
   return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" onclick="downloadAgreement(${JSON.stringify(a.text)},${JSON.stringify(a.signerDip||uid)},${JSON.stringify(a.acceptedAt)})">Descargar PDF</button></details>`:''}`;
 }
-window.downloadAgreement=(text,dip,at)=>{const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Convenio firmado · ${dip}</title><style>body{font:14px Arial;line-height:1.5;max-width:800px;margin:40px auto;color:#17231f}pre{white-space:pre-wrap}footer{margin-top:30px;border-top:1px solid #999;padding-top:12px;font-size:12px}</style></head><body><pre>${esc(text)}</pre><footer>Firma electrónica interna mediante DIP: ${esc(dip)}<br>Fecha y hora exactas: ${esc(at)}<br>Documento descargado desde Nexe. Usa «Guardar como PDF» en el diálogo de impresión.</footer></body></html>`;const w=window.open('about:blank','_blank');if(!w)return toast('Permite ventanas emergentes para generar el PDF');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)};
+window.downloadAgreement=async(text,dip,at,signed=true)=>{if(typeof window.generateAgreementPdf!=='function')return toast('No está disponible el generador de PDF. Recarga Nexe e inténtalo de nuevo.');try{await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
 let resolving=false;
 async function resolveNames(){
   if(resolving||!user)return;
