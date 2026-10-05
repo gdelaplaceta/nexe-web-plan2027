@@ -94,7 +94,21 @@ export default async function handler(req, res) {
     exchange = await response.json().catch(() => ({}));
     if (!response.ok) {
       clearStateCookie(res);
-      return sendCallbackMessage(res, response.status === 401 ? 403 : 502, 'No se pudo validar el acceso', 'PlacetaID no ha podido confirmar esta autorización. Inicia un nuevo intento desde Nexe.');
+      const errorCode = String(exchange?.error || '');
+      console.error('[Nexe PlacetaID exchange]', `HTTP_${response.status}`, errorCode || 'UNSPECIFIED');
+      if (response.status === 401 && errorCode === 'INVALID_CLIENT') {
+        return sendCallbackMessage(
+          res,
+          503,
+          'La integración de Nexe necesita atención',
+          'PlacetaID reconoce la aplicación, pero ha rechazado sus credenciales de servidor. La administración de Nexe debe comprobar que PLACETAID_CLIENT_ID y PLACETAID_CLIENT_SECRET pertenecen a la misma integración autorizada. No compartas esos valores.',
+          false,
+        );
+      }
+      if (response.status === 400 && errorCode === 'INVALID_OR_EXPIRED_CODE') {
+        return sendCallbackMessage(res, 403, 'La autorización ha caducado', 'El código de acceso ya se utilizó, caducó o no coincide con la solicitud. Inicia un nuevo acceso desde Nexe.');
+      }
+      return sendCallbackMessage(res, 502, 'No se pudo validar el acceso', 'PlacetaID no ha podido confirmar esta autorización. Inicia un nuevo intento desde Nexe.');
     }
   } catch {
     clearStateCookie(res);
