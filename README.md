@@ -5,8 +5,8 @@ Maqueta funcional de convocatorias, banco de pruebas y expedientes.
 ## Reglas principales
 
 - El registro exige un DIP válido (DNI/NIE) y el nombre.
-- La verificación definitiva del DIP debe hacerla el servidor contra RSP; nunca se debe exponer una `service_role key` en el navegador.
-- `23749931M` es el DIP reservado de presidencia. El rol no se elige desde el formulario.
+- La identidad se valida mediante PlacetaID; nunca se debe exponer una clave secreta de Supabase al navegador.
+- `23749931M` es el DIP reservado de presidencia. PlacetaID debe verificar esa identidad y el rol se asigna únicamente en el servidor después de registrar la aceptación legal vigente.
 - Las pruebas del banco pueden asociarse a varias convocatorias. Una prueba enviada conserva su validez durante seis meses.
 - La definición SQL y las políticas RLS están en [`supabase/schema.sql`](supabase/schema.sql).
 
@@ -25,9 +25,9 @@ y solo permite el acceso si existe un perfil activo.
 2. La persona inicia sesión con PlacetaID. Si todavía no tiene perfil, Nexe le
    muestra los [Términos y condiciones](legal/terminos.html) y la [Política de
    privacidad](legal/privacidad.html). Solo después de aceptar los términos y
-   confirmar que ha leído la política se crea una cuenta activa de tipo
-   `aspirante`. Las cuentas desactivadas siguen requiriendo intervención de
-   Administración.
+   confirmar que ha leído la política se crea una cuenta activa. La identidad
+   verificada `23749931M` recibe el rol reservado `presidencia`; las cuentas
+   desactivadas siguen requiriendo intervención de Administración.
 3. Configura `SUPABASE_URL` y `SUPABASE_SECRET_KEY` en las variables de entorno
    de producción de Vercel. El servidor usa esta clave para consultar perfiles
    aunque el inicio de sesión venga de PlacetaID; nunca la expongas al navegador.

@@ -1,0 +1,1 @@
+export const PRESIDENTE_DIP = '23749931M';

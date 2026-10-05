@@ -6,6 +6,7 @@ import records from '../api/nexe-records.js';
 import sessionHandler from '../api/placetaid-session.js';
 import register from '../api/placetaid-register.js';
 import { PRIVACY_VERSION, TERMS_VERSION } from '../api/_legal.js';
+import { PRESIDENTE_DIP } from '../api/_roles.js';
 
 const sessionSecret = 'test-session-secret-that-is-long-enough';
 
@@ -329,6 +330,61 @@ test('missing Nexe documents table returns actionable setup error', async () => 
     }, result);
     assert.equal(result.statusCode, 503);
     assert.deepEqual(result.body, { error: 'database_schema_missing' });
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [name, value] of Object.entries(oldEnvironment)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
+test('only the reserved PlacetaID identity with current legal acceptance is promoted', async () => {
+  const originalFetch = globalThis.fetch;
+  const oldEnvironment = {
+    NEXE_SESSION_SECRET: process.env.NEXE_SESSION_SECRET,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+  };
+  process.env.NEXE_SESSION_SECRET = sessionSecret;
+  process.env.SUPABASE_URL = 'https://supabase.example';
+  process.env.SUPABASE_SECRET_KEY = 'server-secret-test';
+  let promotionCount = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.href || input.url);
+    if (url.pathname === '/rest/v1/nexe_profiles' && (!init.method || init.method === 'GET')) {
+      return new Response(JSON.stringify([{
+        id: 'president-profile-uuid',
+        dip: PRESIDENTE_DIP,
+        nombre: 'Presidencia',
+        rol: 'aspirante',
+        activo: true,
+      }]), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    if (url.pathname === '/rest/v1/nexe_profiles' && init.method === 'PATCH') {
+      promotionCount += 1;
+      assert.deepEqual(JSON.parse(init.body), { rol: 'presidencia' });
+      assert.equal(url.searchParams.get('dip'), `eq.${PRESIDENTE_DIP}`);
+      assert.equal(url.searchParams.get('activo'), 'eq.true');
+      assert.equal(url.searchParams.get('terminos_version'), `eq.${TERMS_VERSION}`);
+      assert.equal(url.searchParams.get('privacidad_version'), `eq.${PRIVACY_VERSION}`);
+      return new Response(JSON.stringify([{ rol: 'presidencia' }]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`Unexpected ${init.method || 'GET'} request ${url.href}`);
+  };
+
+  try {
+    const result = responseMock();
+    await sessionHandler({
+      method: 'GET',
+      headers: { cookie: signedSessionCookie(PRESIDENTE_DIP) },
+    }, result);
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.user.role, 'presidencia');
+    assert.equal(promotionCount, 1);
   } finally {
     globalThis.fetch = originalFetch;
     for (const [name, value] of Object.entries(oldEnvironment)) {

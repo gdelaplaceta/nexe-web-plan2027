@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { cookie, serverSupabase } from './_supabase.js';
 import { PRIVACY_VERSION, TERMS_VERSION } from './_legal.js';
+import { PRESIDENTE_DIP } from './_roles.js';
 
 function safeEqual(left, right) {
   const leftBuffer = Buffer.from(left);
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
     const registration = {
       dip: pending.dip,
       nombre: fullName,
-      rol: 'aspirante',
+      rol: pending.dip === PRESIDENTE_DIP ? 'presidencia' : 'aspirante',
       activo: true,
       datos_placetaid: { dip: pending.dip, nombre: fullName },
       placetaid_synced_at: acceptedAt,
@@ -117,6 +118,7 @@ export default async function handler(req, res) {
       profile = existing.data;
       const updated = await sb.from('nexe_profiles')
         .update({
+          ...(pending.dip === PRESIDENTE_DIP ? { rol: 'presidencia' } : {}),
           terminos_version: TERMS_VERSION,
           terminos_accepted_at: acceptedAt,
           privacidad_version: PRIVACY_VERSION,
