@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-const redirect = () => process.env.PLACETAID_REDIRECT_URI || 'https://nexe-web-plan2027.vercel.app/auth/callback';
+import { placetaidRedirectUri } from './_placetaid-config.js';
+
 export default function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   const base = process.env.PLACETAID_URL;
@@ -10,6 +11,6 @@ export default function handler(req, res) {
   const sig = crypto.createHmac('sha256', secret).update(state).digest('base64url');
   res.setHeader('Set-Cookie', `nexe_oauth_state=${state}.${sig}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`);
   const url = new URL('/', base);
-  url.searchParams.set('from', redirect()); url.searchParams.set('client_id', clientId); url.searchParams.set('state', state); url.searchParams.set('platform', 'web'); url.searchParams.set('service', 'Nexe');
+  url.searchParams.set('from', placetaidRedirectUri()); url.searchParams.set('client_id', clientId); url.searchParams.set('state', state); url.searchParams.set('platform', 'web'); url.searchParams.set('service', 'Nexe');
   res.redirect(url.toString());
 }

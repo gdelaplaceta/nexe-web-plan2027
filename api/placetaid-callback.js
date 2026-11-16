@@ -1,8 +1,7 @@
 import crypto from 'node:crypto';
 import { cookie, serverSupabase } from './_supabase.js';
 import { PRIVACY_VERSION, TERMS_VERSION } from './_legal.js';
-
-const redirectUri = () => process.env.PLACETAID_REDIRECT_URI || 'https://nexe-web-plan2027.vercel.app/auth/callback';
+import { placetaidRedirectUri } from './_placetaid-config.js';
 
 function placetaidOrigin() {
   const configured = String(process.env.PLACETAID_URL || '').trim();
@@ -169,7 +168,7 @@ export default async function handler(req, res) {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        redirect_uri: redirectUri(),
+        redirect_uri: placetaidRedirectUri(),
       }),
       signal: AbortSignal.timeout(10_000),
     });

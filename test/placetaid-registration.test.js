@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import test from 'node:test';
 import callback from '../api/placetaid-callback.js';
+import placetaidLogin from '../api/placetaid-login.js';
 import records from '../api/nexe-records.js';
 import sessionHandler from '../api/placetaid-session.js';
 import register from '../api/placetaid-register.js';
@@ -28,6 +29,30 @@ function signedSessionCookie(dip = '12345678Z') {
   return `nexe_session=${payload}.${signature}`;
 }
 
+test('PlacetaID login uses the production callback domain by default', async () => {
+  const oldEnvironment = {
+    NEXE_SESSION_SECRET: process.env.NEXE_SESSION_SECRET,
+    PLACETAID_CLIENT_ID: process.env.PLACETAID_CLIENT_ID,
+    PLACETAID_URL: process.env.PLACETAID_URL,
+    PLACETAID_REDIRECT_URI: process.env.PLACETAID_REDIRECT_URI,
+  };
+  process.env.NEXE_SESSION_SECRET = sessionSecret;
+  process.env.PLACETAID_CLIENT_ID = 'client-test';
+  process.env.PLACETAID_URL = 'https://placetaid.example';
+  delete process.env.PLACETAID_REDIRECT_URI;
+
+  try {
+    const result = responseMock();
+    await placetaidLogin({ method: 'GET' }, result);
+    assert.equal(new URL(result.redirectTo).searchParams.get('from'), 'https://nexe.laplaceta.org/auth/callback');
+  } finally {
+    for (const [name, value] of Object.entries(oldEnvironment)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
 test('new PlacetaID identity must accept Nexe legal texts before account creation', async () => {
   const originalFetch = globalThis.fetch;
   const oldEnvironment = {
@@ -35,6 +60,7 @@ test('new PlacetaID identity must accept Nexe legal texts before account creatio
     PLACETAID_CLIENT_ID: process.env.PLACETAID_CLIENT_ID,
     PLACETAID_CLIENT_SECRET: process.env.PLACETAID_CLIENT_SECRET,
     PLACETAID_URL: process.env.PLACETAID_URL,
+    PLACETAID_REDIRECT_URI: process.env.PLACETAID_REDIRECT_URI,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
   };
@@ -42,14 +68,17 @@ test('new PlacetaID identity must accept Nexe legal texts before account creatio
   process.env.PLACETAID_CLIENT_ID = 'client-test';
   process.env.PLACETAID_CLIENT_SECRET = 'client-secret-test';
   process.env.PLACETAID_URL = 'https://placetaid.example';
+  delete process.env.PLACETAID_REDIRECT_URI;
   process.env.SUPABASE_URL = 'https://supabase.example';
   process.env.SUPABASE_SECRET_KEY = 'server-secret-test';
 
   let insertedProfile;
   let insertCount = 0;
+  let exchangeRedirectUri;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(typeof input === 'string' ? input : input.href || input.url);
     if (url.pathname === '/api/public/exchange') {
+      exchangeRedirectUri = JSON.parse(init.body).redirect_uri;
       return new Response(JSON.stringify({
         login_correct: true,
         claims: { dip: '12345678Z', name: 'Ana <script>alert(1)</script>', surname: 'Pérez' },
@@ -85,6 +114,7 @@ test('new PlacetaID identity must accept Nexe legal texts before account creatio
     }, callbackResponse);
 
     assert.equal(callbackResponse.statusCode, 200);
+    assert.equal(exchangeRedirectUri, 'https://nexe.laplaceta.org/auth/callback');
     assert.match(callbackResponse.body, /Crear tu cuenta de Nexe/);
     assert.match(callbackResponse.body, /value="Ana &lt;script&gt;alert\(1\)&lt;\/script&gt; Pérez"/);
     assert.match(callbackResponse.body, /legal\/terminos\.html/);
