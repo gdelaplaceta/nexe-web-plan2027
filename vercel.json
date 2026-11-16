@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/firma-convenio",
+      "destination": "/api/convenio?receipt=1"
+    },
+    {
       "source": "/auth/callback",
       "destination": "/api/placetaid-callback"
     }

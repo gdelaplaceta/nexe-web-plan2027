@@ -10,7 +10,7 @@
 import { requireUser, requireSameOrigin, sendAuthError, serverSupabase } from './_supabase.js';
 import { isAdminRole } from './_roles.js';
 import { TERMS_VERSION, PRIVACY_VERSION } from './_legal.js';
-import { MAX_TEXT_BYTES, isPlainObject, isValidDniNie, usableSecret } from './_security.js';
+import { MAX_TEXT_BYTES, buildReceipt, isPlainObject, isValidDniNie, usableSecret } from './_security.js';
 import {
   documentHash, normalizeFirmantes, convenioStatus, buildSignatureReceipt,
   verifySignatureReceipt, maskDip, CONVENIO_FIELDS_MAX,
@@ -246,6 +246,45 @@ async function handleSign(req, res, sb, user, ip, body) {
   });
 }
 
+async function handleAcceptanceReceipt(req, res, session) {
+  const secret = process.env.NEXE_SESSION_SECRET;
+  if (!usableSecret(secret)) return fail(res, 503, 'signing_not_configured');
+
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const text = typeof body.texto === 'string' ? body.texto : '';
+  const version = typeof body.version === 'string' ? body.version.slice(0, 40) : '';
+  if (!text.trim() || Buffer.byteLength(text, 'utf8') > MAX_TEXT_BYTES) {
+    return fail(res, 400, 'invalid_text');
+  }
+  if (!version) return fail(res, 400, 'version_required');
+
+  const signedAt = new Date().toISOString();
+  const receipt = buildReceipt({
+    dip: session.user.dip,
+    version,
+    text,
+    signedAt,
+    ip: session.ip,
+  }, secret);
+
+  try {
+    const { error } = await session.sb.rpc('nexe_log_event', {
+      p_actor: session.user.id,
+      p_action: 'consent',
+      p_collection: 'acceptances',
+      p_document_id: session.user.dip,
+      p_after: { version, textHash: receipt.textHash, signedAt },
+      p_ip: session.ip,
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error('[Nexe consent] AUDIT_FAILED', error?.code || 'AUDIT_UNAVAILABLE');
+    return fail(res, 503, 'audit_unavailable');
+  }
+
+  return res.status(200).json({ ip: session.ip, signedAt, receipt });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (!['GET', 'POST'].includes(req.method)) return fail(res, 405, 'method_not_allowed');
@@ -261,6 +300,10 @@ export default async function handler(req, res) {
   }
 
   const { user, ip } = session;
+  if (req.method === 'POST' && req.query?.receipt === '1') {
+    return handleAcceptanceReceipt(req, res, session);
+  }
+
   const sb = session.sb || serverSupabase();
   try {
     if (req.method === 'GET') return await handleGet(req, res, sb, user);
