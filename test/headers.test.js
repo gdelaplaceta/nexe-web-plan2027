@@ -59,3 +59,9 @@ test('las fuentes son autohospedadas', () => {
   const html = read('maqueta.html');
   assert.equal(/fonts\.googleapis|fonts\.gstatic/.test(html), false);
 });
+
+test('el generador PDF se carga solo cuando se solicita una descarga', () => {
+  const html = read('maqueta.html');
+  assert.equal(/<script\s+src=["']\/agreement-pdf\.js["']/.test(html), false);
+  assert.match(html, /script\.src='\/agreement-pdf\.js'/);
+});

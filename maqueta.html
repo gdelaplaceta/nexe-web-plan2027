@@ -595,11 +595,34 @@ aside #mode{background:rgba(255,255,255,.08);color:var(--side-ink);border:1px so
 <nav id="tabbar" class="tabbar" aria-label="Secciones principales" hidden></nav>
 <div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-label="Más opciones"><div class="sheet-panel"><div class="sheet-grip" aria-hidden="true"></div><div id="sheetBody"></div></div></div>
 <footer class="legal"><details><summary>Información legal y privacidad</summary><p>Responsable: Grupo de La Placeta. Nexe gestiona convocatorias, tareas, complementos y nóminas con base en la relación contractual, el consentimiento cuando proceda y las obligaciones legales aplicables.</p><p>Conforme al RGPD (Reglamento (UE) 2016/679), puedes ejercer acceso, rectificación, supresión, oposición, limitación y portabilidad. Los datos de DIP, IBAN, actividad y pagos se usan solo para identidad, gestión laboral, auditoría y ejecución bancaria, con acceso restringido y conservación limitada.</p><p>La relación laboral se somete a la normativa española aplicable, incluido el Estatuto de los Trabajadores, la Ley Orgánica 3/2018 de protección de datos y garantía de derechos digitales, y la normativa de servicios de pago que corresponda. La emisión de pagos requiere IBAN de ambas partes, autorización del Banco de La Placeta y registro de auditoría. Nexe no muestra claves bancarias privadas.</p><p>Contacto y solicitudes de derechos: a través del canal oficial de administración del Grupo de La Placeta. La información no sustituye el asesoramiento jurídico.</p></details></footer>
-<script src="/agreement-pdf.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,user,uid,isAdmin=false,view='conv',convSel=null,run=null,edit=null,selC=null,qSel='',ADM=null,MIC=null,isPres=false;
+let agreementPdfLoad;
+function loadAgreementPdf(){
+  if(typeof window.generateAgreementPdf==='function'&&typeof window.generatePayrollPdf==='function')return Promise.resolve();
+  if(!agreementPdfLoad){
+    agreementPdfLoad=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='/agreement-pdf.js';
+      script.onload=()=>{
+        if(typeof window.generateAgreementPdf!=='function'||typeof window.generatePayrollPdf!=='function'){
+          agreementPdfLoad=null;
+          reject(new Error('El generador PDF no se inicializó.'));
+          return;
+        }
+        resolve();
+      };
+      script.onerror=()=>{
+        agreementPdfLoad=null;
+        reject(new Error('No se pudo cargar el generador PDF.'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  return agreementPdfLoad;
+}
 window.initGestor=function(db,user){
 
 const $=s=>document.querySelector(s);
@@ -822,7 +845,7 @@ function convStatus(uid){
   const ps=myProjs(uid);if(!ps.length)return '';const a=S.acceptances.find(x=>x.id===uid),ok=a&&a.hash===convHash(uid);
   return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" type="button" data-agreement-pdf="${esc(uid)}">Descargar PDF</button></details>`:''}`;
 }
-window.downloadAgreement=async(text,dip,at,signed=true)=>{if(typeof window.generateAgreementPdf!=='function')return toast('No está disponible el generador de PDF. Recarga Nexe e inténtalo de nuevo.');try{await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
+window.downloadAgreement=async(text,dip,at,signed=true)=>{try{await loadAgreementPdf();await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
 let resolving=false;
 async function resolveNames(){
   if(resolving||!user)return;
@@ -1019,8 +1042,7 @@ async function savePayrollAccount(form){
 async function downloadPayrollPdf(index){
   const summary=payrollCache.data?.resumenes?.[index];
   if(!summary)return toast('No hay desglose de nómina para descargar');
-  if(typeof window.generatePayrollPdf!=='function')return toast('El generador PDF no está disponible. Recarga Nexe.');
-  try{await window.generatePayrollPdf({contract:summary.contrato||{},summary,period:summary.periodo||payrollCache.period});toast('PDF de nómina descargado')}
+  try{await loadAgreementPdf();await window.generatePayrollPdf({contract:summary.contrato||{},summary,period:summary.periodo||payrollCache.period});toast('PDF de nómina descargado')}
   catch(error){console.error('No se pudo generar el PDF de nómina:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}
 }
 async function issuePayroll(button){
