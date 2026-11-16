@@ -1,0 +1,25 @@
+{
+  "name": "nexe",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check api/banco-nominas.js",
+    "test": "node --test",
+    "build:agreement-pdf": "esbuild src/agreement-pdf.js --bundle --format=iife --minify --target=es2020 --outfile=agreement-pdf.js",
+    "test:unit": "node --test test/security.test.js test/convenio.test.js test/permisos.test.js test/calendario.test.js test/auditoria.test.js test/headers.test.js",
+    "test:api": "node --test --experimental-test-module-mocks test/convenio-api.test.js test/calendario-api.test.js",
+    "csp": "node scripts/csp.mjs",
+    "csp:check": "node scripts/csp.mjs --check"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "jspdf": "^4.2.1"
+  },
+  "devDependencies": {
+    "@vercel/node": "^5.5.0",
+    "esbuild": "^0.28.2",
+    "vercel": "^48.6.0"
+  }
+}
