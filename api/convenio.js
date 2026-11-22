@@ -8,12 +8,12 @@
 // frente a RSP, aceptación de los textos legales vigentes, estar en la lista de
 // firmantes y volver a escribir el propio DIP (confirmación reforzada).
 import { requireUser, requireSameOrigin, sendAuthError, serverSupabase } from './_supabase.js';
-import { isAdminRole } from './_roles.js';
+import { isAdminRole, rolesOf } from './_roles.js';
 import { TERMS_VERSION, PRIVACY_VERSION } from './_legal.js';
-import { MAX_TEXT_BYTES, buildReceipt, isPlainObject, isValidDniNie, usableSecret } from './_security.js';
+import { MAX_TEXT_BYTES, isPlainObject, isValidDniNie, usableSecret } from './_security.js';
 import {
   documentHash, normalizeFirmantes, convenioStatus, buildSignatureReceipt,
-  verifySignatureReceipt, maskDip, CONVENIO_FIELDS_MAX,
+  verifySignatureReceipt, convenioCsv, maskDip, CONVENIO_FIELDS_MAX,
 } from './_convenio.js';
 
 const ANO_PATTERN = /^20[2-9][0-9]$/;
@@ -113,6 +113,11 @@ function publicView(ano, conv, status, user, profile) {
       firmadoAt: f.firmadoAt,
     })),
     miCargo: mine?.cargo || null,
+    miFirma: mine?.firmado ? {
+      csv: conv.firmas.find(f => f.dip === user.dip && f.docHash === conv.doc.docHash)?.csv || null,
+      firmadoAt: mine.firmadoAt,
+    } : null,
+    csv: status.estado === 'aprobado' ? (conv.doc.csv || null) : null,
     puedoFirmar: reason === null,
     motivoNoFirma: reason,
     perfil: {
@@ -120,7 +125,7 @@ function publicView(ano, conv, status, user, profile) {
       rspVerificado: profile.rsp_verificado === true,
       legalAceptado: legalAccepted(profile),
     },
-    administra: isAdminRole(user.role),
+    administra: isAdminRole(rolesOf(user)),
   };
 }
 
@@ -231,7 +236,11 @@ async function handleSign(req, res, sb, user, ip, body) {
       p_document_id: ano,
       p_owner: conv.ownerId,
       p_actor: user.id,
-      p_payload: { estado: 'aprobado', approvedAt: signedAt },
+      p_payload: {
+        estado: 'aprobado',
+        approvedAt: signedAt,
+        csv: convenioCsv(secret, { ano, docHash: conv.doc.docHash, approvedAt: signedAt }),
+      },
       p_merge: true,
       p_ip: ip,
     });
@@ -242,47 +251,8 @@ async function handleSign(req, res, sb, user, ip, body) {
     ok: true,
     estado: after.estado,
     firmadoAt: signedAt,
-    justificante: receipt.signature.slice(0, 16),
+    csv: receipt.csv,
   });
-}
-
-async function handleAcceptanceReceipt(req, res, session) {
-  const secret = process.env.NEXE_SESSION_SECRET;
-  if (!usableSecret(secret)) return fail(res, 503, 'signing_not_configured');
-
-  const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const text = typeof body.texto === 'string' ? body.texto : '';
-  const version = typeof body.version === 'string' ? body.version.slice(0, 40) : '';
-  if (!text.trim() || Buffer.byteLength(text, 'utf8') > MAX_TEXT_BYTES) {
-    return fail(res, 400, 'invalid_text');
-  }
-  if (!version) return fail(res, 400, 'version_required');
-
-  const signedAt = new Date().toISOString();
-  const receipt = buildReceipt({
-    dip: session.user.dip,
-    version,
-    text,
-    signedAt,
-    ip: session.ip,
-  }, secret);
-
-  try {
-    const { error } = await session.sb.rpc('nexe_log_event', {
-      p_actor: session.user.id,
-      p_action: 'consent',
-      p_collection: 'acceptances',
-      p_document_id: session.user.dip,
-      p_after: { version, textHash: receipt.textHash, signedAt },
-      p_ip: session.ip,
-    });
-    if (error) throw error;
-  } catch (error) {
-    console.error('[Nexe consent] AUDIT_FAILED', error?.code || 'AUDIT_UNAVAILABLE');
-    return fail(res, 503, 'audit_unavailable');
-  }
-
-  return res.status(200).json({ ip: session.ip, signedAt, receipt });
 }
 
 export default async function handler(req, res) {
@@ -300,16 +270,12 @@ export default async function handler(req, res) {
   }
 
   const { user, ip } = session;
-  if (req.method === 'POST' && req.query?.receipt === '1') {
-    return handleAcceptanceReceipt(req, res, session);
-  }
-
   const sb = session.sb || serverSupabase();
   try {
     if (req.method === 'GET') return await handleGet(req, res, sb, user);
     const body = isPlainObject(req.body) ? req.body : {};
     if (body.action === 'publicar') {
-      if (!isAdminRole(user.role)) return fail(res, 403, 'forbidden');
+      if (!isAdminRole(rolesOf(user))) return fail(res, 403, 'forbidden');
       return await handlePublish(res, sb, user, ip, body);
     }
     if (body.action === 'firmar') return await handleSign(req, res, sb, user, ip, body);

@@ -4,7 +4,7 @@
 //   (la función SQL escribe el dato y su entrada de auditoría en una transacción).
 import { requireUser, requireSameOrigin, sendAuthError, serverSupabase } from './_supabase.js';
 import { readPlan, writePlan, visibleRow, splitPath } from './_permissions.js';
-import { isAdminRole } from './_roles.js';
+import { isAdminRole, rolesOf } from './_roles.js';
 import { MAX_JSON_BYTES, isPlainObject, jsonSize, verifyReceipt } from './_security.js';
 
 const TABLES = new Set([
@@ -115,7 +115,7 @@ async function handleDocument(req, res, sb, user, ip) {
     // cuando administración escribe en su expediente.
     let ownerId = user.id;
     const seg = splitPath(path);
-    if (isAdminRole(user.role) && ['aspirantes', 'notas', 'res', 'acceptances', 'members'].includes(seg[0])) {
+    if (isAdminRole(rolesOf(user)) && ['aspirantes', 'notas', 'res', 'acceptances', 'members'].includes(seg[0])) {
       ownerId = (await profileIdForDip(sb, id)) || user.id;
     }
 
@@ -134,7 +134,7 @@ async function handleDocument(req, res, sb, user, ip) {
 
   if (req.method === 'DELETE') {
     if (!id) return fail(res, 400, 'document_id_required');
-    if (!isAdminRole(user.role)) return fail(res, 403, 'forbidden');
+    if (!isAdminRole(rolesOf(user))) return fail(res, 403, 'forbidden');
     const { data, error } = await sb.rpc('nexe_delete_document', {
       p_collection: path, p_document_id: id, p_actor: user.id, p_ip: ip,
     });
@@ -151,7 +151,7 @@ async function handleTable(req, res, sb, user, ip) {
 
   if (req.method === 'GET') {
     let query = sb.from(`nexe_${table}`).select('*').order('created_at', { ascending: false });
-    if (!isAdminRole(user.role)) query = query.eq('owner_id', user.id);
+    if (!isAdminRole(rolesOf(user))) query = query.eq('owner_id', user.id);
     const { data, error } = await query;
     if (error) throw error;
     return res.status(200).json({ data });

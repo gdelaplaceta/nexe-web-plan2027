@@ -31,10 +31,6 @@ y solo permite el acceso si existe un perfil activo.
 3. Configura `SUPABASE_URL` y `SUPABASE_SECRET_KEY` en las variables de entorno
    de producción de Vercel. El servidor usa esta clave para consultar perfiles
    aunque el inicio de sesión venga de PlacetaID; nunca la expongas al navegador.
-4. Configura `PLACETAID_REDIRECT_URI` como
-   `https://nexe.laplaceta.org/auth/callback` en Vercel y autoriza esa misma URL
-   en la integración de PlacetaID. El inicio de sesión y el callback deben usar
-   exactamente el mismo dominio.
 
 Nexe guarda la versión y fecha de aceptación de los términos y la versión y fecha
 de lectura de la política. Las rutas API usan una cookie de sesión propia de

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verificar documento · Nexe</title>
+<meta name="description" content="Comprueba la autenticidad de una firma o de un convenio de Grupo de La Placeta con su código seguro de verificación.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<style>
+@font-face{font-family:"Baruta";src:url("/baruta-black.ttf") format("truetype");font-weight:900;font-display:swap}
+@font-face{font-family:"Plus Jakarta Sans";src:url("/plus-jakarta-sans.ttf") format("truetype");font-weight:400;font-display:swap}
+:root{--bg:#F3F5F1;--surface:#fff;--ink:#14312D;--mut:#5B6F6A;--line:#D6DED9;--line-strong:#B9C6BF;--ok:#22714F;--ok-soft:#E3F3EA;--bad:#B5352A;--bad-soft:#FBE9E7;--warn:#8A5D00;--warn-soft:#FFF3D1;--header:#14312D;--coin:#F0B429;--focus:#2B5E8C;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1A18;--surface:#162522;--ink:#E6EEEB;--mut:#98ADA7;--line:#2A413D;--line-strong:#3B5853;--ok:#5CC297;--ok-soft:#183A2C;--bad:#EF7A6E;--bad-soft:#3A1F1C;--warn:#F3C35E;--warn-soft:#3B2E0C;--header:#0A1412;--focus:#7DB1E0;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+header{background:var(--header);padding:14px clamp(14px,4vw,32px);display:flex;align-items:center;gap:14px;color:#E6EEEB}
+header img{height:44px;width:auto;background:#fff;border-radius:10px;padding:4px 8px}
+header span{font-family:"Baruta","Plus Jakarta Sans",sans-serif;font-weight:900;font-size:18px}
+main{max-width:640px;margin:0 auto;padding:clamp(18px,4vw,36px) clamp(14px,4vw,24px) 48px}
+h1{font-family:"Baruta","Plus Jakarta Sans",sans-serif;font-weight:900;font-size:clamp(22px,4vw,28px);line-height:1.2;margin:0 0 8px}
+p{margin:0 0 12px}
+.meta{color:var(--mut);font-size:14px}
+form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;margin:18px 0;display:grid;gap:12px}
+label{font-weight:700;font-size:14px}
+input{font:inherit;font-size:18px;letter-spacing:.06em;text-transform:uppercase;padding:12px 14px;min-height:50px;border:1px solid var(--line-strong);border-radius:12px;background:var(--bg);color:var(--ink);width:100%}
+input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(43,94,140,.25)}
+button{font:inherit;font-weight:700;min-height:50px;border:0;border-radius:12px;background:var(--ink);color:var(--bg);padding:0 18px;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+#resultado{margin-top:8px}
+.card{border-radius:16px;padding:18px;border:1px solid var(--line);background:var(--surface);display:grid;gap:10px}
+.card.ok{border-color:var(--ok);background:var(--ok-soft)}
+.card.bad{border-color:var(--bad);background:var(--bad-soft)}
+.card.warn{border-color:var(--warn);background:var(--warn-soft)}
+.estado{font-weight:800;font-size:18px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+dt{color:var(--mut);font-size:14px}
+dd{margin:0;font-weight:600}
+footer{margin-top:28px;font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <img src="/nexe-logo.png" alt="Grupo de La Placeta">
+  <span>Verificar documento</span>
+</header>
+<main>
+  <h1>Comprobar una firma o un convenio</h1>
+  <p>Introduce el código seguro de verificación (CSV) que aparece en el documento. Tiene el formato <strong>NXE-XXXX-XXXX-XXXX</strong>.</p>
+  <form id="form-csv" novalidate>
+    <div>
+      <label for="csv">Código seguro de verificación</label>
+      <input id="csv" name="csv" type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="20" placeholder="NXE-XXXX-XXXX-XXXX" aria-describedby="ayuda">
+      <p id="ayuda" class="meta" style="margin:6px 0 0">No distingue mayúsculas ni guiones.</p>
+    </div>
+    <button type="submit">Verificar</button>
+  </form>
+  <section id="resultado" aria-live="polite" aria-atomic="true"></section>
+  <footer>
+    La verificación solo confirma que el documento fue firmado o aprobado tal y como consta en Nexe. No sustituye a la legislación aplicable.
+  </footer>
+</main>
+<script src="/verificar.js" defer></script>
+</body>
+</html>

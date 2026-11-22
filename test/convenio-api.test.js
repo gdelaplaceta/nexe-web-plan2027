@@ -98,7 +98,6 @@ mock.module('../api/_supabase.js', {
 const { default: handler } = await import('../api/convenio.js');
 const { documentHash } = await import('../api/_convenio.js');
 const { TERMS_VERSION, PRIVACY_VERSION } = await import('../api/_legal.js');
-const { verifyReceipt } = await import('../api/_security.js');
 
 // --- Utilidades -------------------------------------------------------------
 function res() {
@@ -267,17 +266,6 @@ test('la huella del texto publicado coincide con la calculada aquí', async () =
   reset(); await publicar();
   const doc = db.documents.find(d => d.collection_path === 'convenios');
   assert.equal(doc.payload.docHash, documentHash('2027', TEXTO));
-});
-
-test('el endpoint anterior de aceptación devuelve un recibo auditado', async () => {
-  reset();
-  currentUser = MIEMBRO_SEC;
-  const text = 'Convenio de colaboración aceptado';
-  const r = await call('POST', { receipt: '1' }, { texto: text, version: '2027-v1' });
-  assert.equal(r.statusCode, 200);
-  assert.equal(verifyReceipt(r.body.receipt, { dip: MIEMBRO_SEC.dip, text }, process.env.NEXE_SESSION_SECRET), true);
-  assert.equal(db.audit[0].action, 'event');
-  assert.equal(db.audit[0].p_action, 'consent');
 });
 
 test('una cuenta sin legal aceptado no puede firmar', async () => {

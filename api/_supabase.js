@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifySession, sameOrigin, clientIp } from './_security.js';
-import { normalizeRole } from './_roles.js';
+import { effectiveRoles, primaryRole, rolesFromPlazas, presidentDip } from './_roles.js';
+import { TERMS_VERSION, PRIVACY_VERSION } from './_legal.js';
 
 // Cliente de Supabase solo para el servidor. La clave secreta nunca llega al navegador.
 export function serverSupabase() {
@@ -28,11 +29,21 @@ export async function requireUser(req) {
   if (!session) throw new Error(cookie(req, 'nexe_session') ? 'invalid_session' : 'missing_session');
 
   const { data: profile, error } = await sb.from('nexe_profiles')
-    .select('id,dip,nombre,rol,activo')
+    .select('id,dip,nombre,rol,activo,terminos_version,privacidad_version')
     .eq('dip', session.dip)
     .maybeSingle();
   if (error) throw error;
   if (!profile || !profile.activo) throw new Error('invalid_session');
+
+  const plazaRoles = await plazaRolesOf(sb, profile.dip);
+  const roles = effectiveRoles({
+    profileRol: profile.rol,
+    plazaRoles,
+    // Presidencia exige además haber aceptado los textos legales vigentes.
+    isPresident: profile.dip === presidentDip()
+      && profile.terminos_version === TERMS_VERSION
+      && profile.privacidad_version === PRIVACY_VERSION,
+  });
 
   return {
     sb,
@@ -41,9 +52,24 @@ export async function requireUser(req) {
       id: profile.id,
       dip: profile.dip,
       name: profile.nombre || profile.dip,
-      role: normalizeRole(profile.rol),
+      roles,
+      role: primaryRole(roles),
     },
   };
+}
+
+// Roles concedidos por plazas vigentes de una persona.
+export async function plazaRolesOf(sb, dip) {
+  const { data: res, error } = await sb.from('nexe_documents')
+    .select('document_id,payload')
+    .eq('collection_path', `notas/${dip}/res`);
+  if (error) throw error;
+  if (!(res || []).some(r => r.payload?.estado === 'plaza')) return [];
+  const { data: conv, error: cErr } = await sb.from('nexe_documents')
+    .select('document_id,payload')
+    .eq('collection_path', 'convocatorias');
+  if (cErr) throw cErr;
+  return rolesFromPlazas(res || [], conv || []);
 }
 
 // Las escrituras que usan cookie de sesión deben venir del mismo sitio.

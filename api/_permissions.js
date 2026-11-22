@@ -3,7 +3,7 @@
 // devuelven una decisión. No tocan la base de datos, así que se testean solas.
 import {
   ADMIN_ONLY, OWN_SCOPED, SHARED_READ, TASK_STATUSES, TASK_WORKER_FIELDS,
-  isAdminRole, isPresidentRole,
+  ROLES_CONCEDIBLES, isAdminRole, isPresidentRole, rolesOf,
 } from './_roles.js';
 import { isPlainObject } from './_security.js';
 
@@ -12,9 +12,13 @@ const SERVER_ONLY_ROOT = 'calendario';
 // Qué puede hacer cada rol en la interfaz. El servidor lo calcula y lo envía en la sesión;
 // la interfaz solo muestra pestañas y botones según esta respuesta. La autorización real
 // la aplican siempre los endpoints.
-export function capacidadesFor(role) {
-  const admin = isAdminRole(role);
-  const presidencia = isPresidentRole(role);
+export function capacidadesFor(rolesInput) {
+  const roles = rolesOf({ roles: [].concat(rolesInput ?? []) });
+  const admin = isAdminRole(roles);
+  const presidencia = isPresidentRole(roles);
+  const secretaria = roles.includes('secretaria');
+  const direccion = roles.includes('direccion');
+  const vicepresidencia = roles.includes('vicepresidencia');
   return {
     convocatorias: { ver: true, gestionar: admin },
     expediente: { propio: true },
@@ -25,7 +29,11 @@ export function capacidadesFor(role) {
     incidencias: { declarar: true, gestionar: admin },
     nominas: { ver: true, gestionar: admin, emitir: presidencia },
     seleccion: { gestionar: admin },
-    presidencia: { panel: presidencia, auditoria: presidencia },
+    // Roles de plaza: reservados para las funciones que se construirán después.
+    actas: { redactar: secretaria || admin },
+    departamento: { gestionar: direccion || admin },
+    representacion: { coordinar: vicepresidencia || presidencia },
+    presidencia: { panel: presidencia, auditoria: presidencia, archivo: presidencia },
   };
 }
 
@@ -44,7 +52,7 @@ export function readPlan(path, id, user) {
   const root = seg[0];
   // Calendario y descansos: solo a través de /api/calendario (reglas y filtros allí).
   if (root === SERVER_ONLY_ROOT) return { allow: false };
-  if (isAdminRole(user.role)) return { allow: true, filter: 'none' };
+  if (isAdminRole(rolesOf(user))) return { allow: true, filter: 'none' };
   if (!root || seg.length % 2 === 0) return { allow: false };
 
   // Convenio general: el texto y su estado los ve cualquier persona activa.
@@ -87,7 +95,11 @@ export function writePlan({ path, id, method, user, body, current, assignedProje
   // verificadas). Ni siquiera administración lo escribe por la API genérica.
   if (root === 'convenios' || root === SERVER_ONLY_ROOT) return deny;
 
-  if (isAdminRole(user.role)) return { allow: true };
+  // Una convocatoria solo puede conceder roles concedibles: nunca presidencia.
+  if (root === 'convocatorias' && body.rolConcedido !== undefined
+      && !ROLES_CONCEDIBLES.includes(body.rolConcedido)) return deny;
+
+  if (isAdminRole(rolesOf(user))) return { allow: true };
 
   if (ADMIN_ONLY.has(root)) return deny;
 

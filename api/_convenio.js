@@ -1,6 +1,11 @@
 // Lógica pura del convenio general: huella del texto, firmantes, recibos de
 // firma y estado de aprobación. No toca la base de datos.
+import crypto from 'node:crypto';
 import { isValidDniNie, sha256Hex, hmacBase64Url, safeEqual, usableSecret } from './_security.js';
+
+// Código seguro de verificación (CSV). Alfabeto sin I, L, O, U para evitar confusiones.
+const CSV_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+export const CSV_PATTERN = /^NXE-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
 
 export const MAX_FIRMANTES = 10;
 export const CONVENIO_FIELDS_MAX = { titulo: 200, cargo: 80, nombre: 120, acuerdoRef: 120 };
@@ -60,15 +65,57 @@ export function convenioStatus(firmantes, firmas, docHash) {
 
 // Recibo de una firma. Se firma con el secreto del servidor, así no puede
 // fabricarse ni alterarse desde el navegador.
-const RECEIPT_FIELDS = ['ano', 'dip', 'cargo', 'nombre', 'docHash', 'signedAt', 'ip', 'userAgent'];
+const RECEIPT_FIELDS = ['ano', 'dip', 'cargo', 'nombre', 'docHash', 'signedAt', 'ip', 'userAgent', 'csv'];
 
 function canonical(fields) {
   return JSON.stringify(RECEIPT_FIELDS.map(k => String(fields[k] ?? '')));
 }
 
+// Convierte bytes en 12 caracteres del alfabeto CSV y los agrupa en NXE-XXXX-XXXX-XXXX.
+function csvFromBytes(buffer) {
+  let bits = 0, value = 0, out = '';
+  for (const byte of buffer) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 5 && out.length < 12) {
+      out += CSV_ALPHABET[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+    if (out.length >= 12) break;
+  }
+  return `NXE-${out.slice(0, 4)}-${out.slice(4, 8)}-${out.slice(8, 12)}`;
+}
+
+function csvFor(secret, parts) {
+  const digest = crypto.createHmac('sha256', secret).update(['CSV', ...parts].join('|')).digest();
+  return csvFromBytes(digest);
+}
+
+// CSV de una firma y del convenio aprobado. Dependen solo del secreto y de los datos firmados.
+export function signatureCsv(secret, { ano, dip, docHash, signedAt }) {
+  return csvFor(secret, ['firma', ano, dip, docHash, signedAt]);
+}
+
+export function convenioCsv(secret, { ano, docHash, approvedAt }) {
+  return csvFor(secret, ['convenio', ano, docHash, approvedAt]);
+}
+
+// Acepta el código con o sin guiones y en minúsculas. Devuelve null si no es válido.
+export function normalizeCsv(input) {
+  const raw = String(input || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const body = raw.startsWith('NXE') ? raw.slice(3) : raw;
+  if (body.length !== 12) return null;
+  const code = `NXE-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8, 12)}`;
+  return CSV_PATTERN.test(code) ? code : null;
+}
+
 export function buildSignatureReceipt(fields, secret) {
   if (!usableSecret(secret)) throw new Error('signing_secret_invalid');
+  const csv = signatureCsv(secret, {
+    ano: String(fields.ano), dip: fields.dip, docHash: fields.docHash, signedAt: fields.signedAt,
+  });
   const data = {
+    csv,
     ano: String(fields.ano),
     dip: fields.dip,
     cargo: fields.cargo,

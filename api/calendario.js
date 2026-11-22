@@ -7,7 +7,7 @@
 // Las reglas (antelación de 7 días, 10 días por persona, incompatibilidades con
 // actividades y festivos) se aplican aquí, en el servidor. La interfaz solo las refleja.
 import { requireUser, requireSameOrigin, sendAuthError, serverSupabase } from './_supabase.js';
-import { isAdminRole } from './_roles.js';
+import { isAdminRole, rolesOf } from './_roles.js';
 import { isPlainObject } from './_security.js';
 import {
   festivosOf, isIsoDate, todayIso, motivoSolicitud, motivoAceptarActividad,
@@ -86,7 +86,7 @@ async function handleGet(req, res, sb, user) {
   if (!ANOS_CONFIGURADOS.includes(ano)) return fail(res, 400, 'ano_no_configurado');
   const st = await state(sb, ano, user.dip);
   const hoy = todayIso();
-  const admin = isAdminRole(user.role);
+  const admin = isAdminRole(rolesOf(user));
   const aceptadas = fechasAceptadas(st.aceptaciones, user.dip, st.actividades);
   const resumen = resumenDescansos(st.mine);
   const porActividad = st.aceptaciones.reduce((m, a) => m.set(a.actividadId, (m.get(a.actividadId) || 0) + 1), new Map());
@@ -245,7 +245,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') return await handleGet(req, res, sb, user);
     const body = isPlainObject(req.body) ? req.body : {};
-    const admin = isAdminRole(user.role);
+    const admin = isAdminRole(rolesOf(user));
     switch (body.action) {
       case 'solicitar_descanso': return await handleSolicitar(res, sb, user, ip, body);
       case 'cancelar_descanso': return await handleCancelar(res, sb, user, ip, body);

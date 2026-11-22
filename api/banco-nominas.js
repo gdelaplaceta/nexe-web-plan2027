@@ -1,3 +1,4 @@
+import { isAdminRole, isPresidentRole, rolesOf } from './_roles.js';
 import { requireUser } from './_supabase.js';
 
 // BFF Vercel: las credenciales del Banco nunca llegan al navegador.
@@ -35,8 +36,8 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: code === 'supabase_not_configured' ? code : 'session_unavailable' });
   }
 
-  const isPresident = user.role === 'presidencia';
-  const isAdmin = isPresident || user.role === 'administracion';
+  const isPresident = isPresidentRole(rolesOf(user));
+  const isAdmin = isPresident || isAdminRole(rolesOf(user));
 
   const bankUrl = process.env.BANCO_API_URL || process.env.BANK_URL || 'https://api.banco.laplaceta.org';
   const target = process.env.BANCO_NOMINAS_URL || `${bankUrl.replace(/\/+$/, '')}/api/nominas`;

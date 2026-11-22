@@ -499,6 +499,10 @@ aside #mode{background:rgba(255,255,255,.08);color:var(--side-ink);border:1px so
 .cal-review-form{display:grid;gap:6px;width:100%}
 .cal-warn{margin:6px 0 0;padding:6px 10px;font-size:13px}
 .cal-festivos .cal-row{padding:8px 0}
+
+/* Códigos de verificación (CSV) */
+.csv-line{margin:6px 0;word-break:break-word}
+.csv-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -595,34 +599,11 @@ aside #mode{background:rgba(255,255,255,.08);color:var(--side-ink);border:1px so
 <nav id="tabbar" class="tabbar" aria-label="Secciones principales" hidden></nav>
 <div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-label="Más opciones"><div class="sheet-panel"><div class="sheet-grip" aria-hidden="true"></div><div id="sheetBody"></div></div></div>
 <footer class="legal"><details><summary>Información legal y privacidad</summary><p>Responsable: Grupo de La Placeta. Nexe gestiona convocatorias, tareas, complementos y nóminas con base en la relación contractual, el consentimiento cuando proceda y las obligaciones legales aplicables.</p><p>Conforme al RGPD (Reglamento (UE) 2016/679), puedes ejercer acceso, rectificación, supresión, oposición, limitación y portabilidad. Los datos de DIP, IBAN, actividad y pagos se usan solo para identidad, gestión laboral, auditoría y ejecución bancaria, con acceso restringido y conservación limitada.</p><p>La relación laboral se somete a la normativa española aplicable, incluido el Estatuto de los Trabajadores, la Ley Orgánica 3/2018 de protección de datos y garantía de derechos digitales, y la normativa de servicios de pago que corresponda. La emisión de pagos requiere IBAN de ambas partes, autorización del Banco de La Placeta y registro de auditoría. Nexe no muestra claves bancarias privadas.</p><p>Contacto y solicitudes de derechos: a través del canal oficial de administración del Grupo de La Placeta. La información no sustituye el asesoramiento jurídico.</p></details></footer>
+<script src="/agreement-pdf.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,user,uid,isAdmin=false,view='conv',convSel=null,run=null,edit=null,selC=null,qSel='',ADM=null,MIC=null,isPres=false;
-let agreementPdfLoad;
-function loadAgreementPdf(){
-  if(typeof window.generateAgreementPdf==='function'&&typeof window.generatePayrollPdf==='function')return Promise.resolve();
-  if(!agreementPdfLoad){
-    agreementPdfLoad=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='/agreement-pdf.js';
-      script.onload=()=>{
-        if(typeof window.generateAgreementPdf!=='function'||typeof window.generatePayrollPdf!=='function'){
-          agreementPdfLoad=null;
-          reject(new Error('El generador PDF no se inicializó.'));
-          return;
-        }
-        resolve();
-      };
-      script.onerror=()=>{
-        agreementPdfLoad=null;
-        reject(new Error('No se pudo cargar el generador PDF.'));
-      };
-      document.head.appendChild(script);
-    });
-  }
-  return agreementPdfLoad;
-}
 window.initGestor=function(db,user){
 
 const $=s=>document.querySelector(s);
@@ -845,7 +826,7 @@ function convStatus(uid){
   const ps=myProjs(uid);if(!ps.length)return '';const a=S.acceptances.find(x=>x.id===uid),ok=a&&a.hash===convHash(uid);
   return `<div class="meta" style="margin-bottom:8px"><span class="st ${ok?'approved':'review'}">${ok?'Convenio aceptado':'Pendiente de aceptar'}</span>${a?'firmado por DIP '+esc(a.signerDip||uid)+' · '+esc(String(a.acceptedAt)):'aún no ha aceptado'}</div>${a?`<details style="margin-bottom:8px"><summary>Ver última versión aceptada</summary><pre class="doc">${esc(a.text)}</pre><button class="btn sm sec" type="button" data-agreement-pdf="${esc(uid)}">Descargar PDF</button></details>`:''}`;
 }
-window.downloadAgreement=async(text,dip,at,signed=true)=>{try{await loadAgreementPdf();await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
+window.downloadAgreement=async(text,dip,at,signed=true)=>{if(typeof window.generateAgreementPdf!=='function')return toast('No está disponible el generador de PDF. Recarga Nexe e inténtalo de nuevo.');try{await window.generateAgreementPdf({text,dip,acceptedAt:at,signed});toast(signed?'Convenio PDF descargado':'Borrador PDF descargado')}catch(error){console.error('No se pudo generar el PDF del convenio:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}};
 let resolving=false;
 async function resolveNames(){
   if(resolving||!user)return;
@@ -1042,7 +1023,8 @@ async function savePayrollAccount(form){
 async function downloadPayrollPdf(index){
   const summary=payrollCache.data?.resumenes?.[index];
   if(!summary)return toast('No hay desglose de nómina para descargar');
-  try{await loadAgreementPdf();await window.generatePayrollPdf({contract:summary.contrato||{},summary,period:summary.periodo||payrollCache.period});toast('PDF de nómina descargado')}
+  if(typeof window.generatePayrollPdf!=='function')return toast('El generador PDF no está disponible. Recarga Nexe.');
+  try{await window.generatePayrollPdf({contract:summary.contrato||{},summary,period:summary.periodo||payrollCache.period});toast('PDF de nómina descargado')}
   catch(error){console.error('No se pudo generar el PDF de nómina:',error);toast('No se pudo generar el PDF. Comprueba la conexión e inténtalo de nuevo.')}
 }
 async function issuePayroll(button){
@@ -1140,6 +1122,11 @@ function render(){
   if(view==='gest'){if(m.contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;return m.innerHTML=rGest()}
   if(view==='sel')return selRender();
   if(view==='pres')return presRender();
+  if(view==='archivo'){
+    if(!document.getElementById('archivo-view'))m.innerHTML='<div id="archivo-view"></div>';
+    if(!arcLoadedAt||Date.now()-arcLoadedAt>60000)void loadArchivo();
+    return;
+  }
   if(view==='auditoria'){
     if(!document.getElementById('auditoria-view'))m.innerHTML='<div id="auditoria-view"></div>';
     void loadAuditoria();
@@ -1296,6 +1283,7 @@ function renderConvenio(box){
     <h2 id="conv-title">${esc(c.titulo)}</h2>
     <div class="meta">Ejercicio ${esc(c.ano)}${c.acuerdoRef?` · Acuerdo ${esc(c.acuerdoRef)}`:''}</div>
     <div class="chips">${status}</div>
+    ${csvLines(c)}
     <details><summary>Leer el texto del convenio</summary><pre class="doc">${esc(c.texto)}</pre></details>
     <h3>Firmantes</h3>
     <div class="tw"><table><thead><tr><th>Cargo</th><th>Nombre</th><th>DIP</th><th>Firma</th></tr></thead><tbody>${firmantes}</tbody></table></div>
@@ -1303,6 +1291,11 @@ function renderConvenio(box){
   </article>
   <div id="conv-publish-area"></div>`;
   renderConvPublish(box,c);
+}
+
+function csvLines(c){
+  const linea=(code,etiqueta)=>code?`<p class="meta csv-line">${esc(etiqueta)} <b class="csv-code">${esc(code)}</b> · <a href="/verificar?csv=${encodeURIComponent(code)}" target="_blank" rel="noopener">Verificar</a></p>`:'';
+  return (c.csv?linea(c.csv,'Código de verificación del convenio:'):'')+(c.miFirma?.csv?linea(c.miFirma.csv,'Tu firma · código de verificación:'):'');
 }
 
 function renderSignArea(c){
@@ -1369,7 +1362,7 @@ document.addEventListener('click',async e=>{
       const r=await fetch('/api/convenio',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'firmar',ano:CONV_ANO,confirmDip:dip})});
       const j=await r.json().catch(()=>({}));
       if(!r.ok){toast(convMsg(j.error));return}
-      toast('Convenio firmado. Justificante '+j.justificante);
+      toast('Firma registrada. CSV '+(j.csv||''));
       await loadConvenioGeneral(true);
     }
     if(act==='publicar'){
@@ -1398,9 +1391,10 @@ const NAV_ICON={
   sel:'<circle cx="10" cy="8" r="4"/><path d="M3 20c1-4 4-6 7-6s6 2 7 6M17 11l2 2 4-4"/>',
   pres:'<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
   auditoria:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  archivo:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
   mas:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
 };
-const NAV_LABEL={conv:'Convocatorias',calendario:'Calendario',convenio:'Convenio 2027',tareas:'Tareas',nominas:'Nóminas',exp:'Mi expediente',gest:'Gestionar',sel:'Selección',pres:'Presidencia',auditoria:'Auditoría'};
+const NAV_LABEL={conv:'Convocatorias',calendario:'Calendario',convenio:'Convenio 2027',tareas:'Tareas',nominas:'Nóminas',exp:'Mi expediente',gest:'Gestionar',sel:'Selección',pres:'Presidencia',auditoria:'Auditoría',archivo:'Archivo'};
 const NAV_PRIMARY=['conv','calendario','convenio','tareas'];
 const NAV_MAX_PRIMARY=4;
 let CAPS={},SESSION_USER=null;
@@ -1415,6 +1409,7 @@ function navItems(showT){
   if(CAPS.seleccion?.gestionar)items.push('sel');
   if(CAPS.presidencia?.panel)items.push('pres');
   if(CAPS.presidencia?.auditoria)items.push('auditoria');
+  if(CAPS.presidencia?.archivo)items.push('archivo');
   return items;
 }
 
@@ -1438,7 +1433,7 @@ function openSheet(){
   const u=SESSION_USER||{};
   $('#sheetBody').innerHTML=
     (more.length?`<h3 class="sheet-h">Secciones</h3><div class="sheet-list">${more.map(v=>`<button type="button" class="sheet-item" data-v="${v}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICON[v]}</svg><span>${NAV_LABEL[v]}</span></button>`).join('')}</div>`:'')+
-    `<h3 class="sheet-h">Cuenta</h3><div class="sheet-account"><b>${esc(u.name||'')}</b><span class="meta">${u.dip?'DIP ••••'+esc(String(u.dip).slice(-5)):''}</span></div>
+    `<h3 class="sheet-h">Cuenta</h3><div class="sheet-account"><b>${esc(u.name||'')}</b><span class="meta">${u.dip?'DIP ••••'+esc(String(u.dip).slice(-5)):''}</span><div class="chips">${(u.roles||[]).map(r=>`<span class="chip c-mut">${esc(ROL_TXT[r]||r)}</span>`).join('')}</div></div>
      <div class="sheet-list"><button type="button" class="sheet-item danger" data-logout="1"><span>Cerrar sesión</span></button></div>`;
   $('#sheet').hidden=false;
   document.body.classList.add('sheet-open');
@@ -1638,6 +1633,60 @@ async function loadAuditoria(){
   }
 }
 
+/* ---- Archivo de presidencia: todas las personas y sus registros ---- */
+let arcLoadedAt=0;
+const ROL_TXT={presidencia:'Presidencia',administracion:'Administración',vicepresidencia:'Vicepresidencia',secretaria:'Secretaría',direccion:'Dirección',colaborador:'Colaborador/a',aspirante:'Aspirante'};
+async function loadArchivo(dip){
+  const box=document.getElementById('archivo-view');
+  if(!box)return;
+  try{
+    const r=await fetch(dip?`/api/archivo?dip=${encodeURIComponent(dip)}`:'/api/archivo',{credentials:'same-origin',cache:'no-store'});
+    if(r.status===403){box.innerHTML='<div class="warn">Este archivo es solo para presidencia.</div>';return}
+    if(!r.ok)throw new Error('archivo_'+r.status);
+    const data=(await r.json()).data;
+    if(dip)renderFicha(box,data); else renderLista(box,data);
+    arcLoadedAt=Date.now();
+  }catch(error){
+    console.error('Archivo no disponible:',error);
+    box.innerHTML='<div class="warn">No se pudo cargar el archivo. Inténtalo de nuevo.</div>';
+  }
+}
+function renderLista(box,lista){
+  const filas=lista.map(p=>`<tr data-q="${esc((p.nombre+' '+p.dip).toLowerCase())}">
+      <td><button class="btn sec sm" type="button" data-arc-dip="${esc(p.dip)}">${esc(p.nombre)}</button><div class="meta">${esc(p.dip)}</div></td>
+      <td>${p.roles.map(r=>`<span class="chip ${r==='presidencia'||r==='administracion'?'c-blue':'c-mut'}">${esc(ROL_TXT[r]||r)}</span>`).join(' ')}</td>
+      <td>${p.plazas.length}</td><td>${p.firmasConvenio}</td>
+      <td class="meta">${p.activo?'':'Inactiva'}${p.rspVerificado?'':' · DIP sin verificar'}</td></tr>`).join('');
+  box.innerHTML=`<article class="panel"><h2>Archivo de personas</h2>
+    <p class="meta">Roles calculados desde las plazas vigentes. Solo lectura. Quien tiene una plaza conserva el rol de aspirante.</p>
+    <div class="f" style="margin:10px 0"><label for="arc-q">Buscar por nombre o DIP</label><input id="arc-q" type="search" placeholder="Nombre o DIP"></div>
+    <div class="tw"><table><thead><tr><th>Persona</th><th>Roles</th><th>Plazas</th><th>Firmas</th><th></th></tr></thead><tbody id="arc-body">${filas||'<tr><td colspan="5" class="meta">No hay personas registradas.</td></tr>'}</tbody></table></div>
+  </article>`;
+}
+function renderFicha(box,f){
+  const chips=(f.plazas||[]).map(p=>`<li class="cal-row"><div><b>${esc(p.convocatoria)}</b><div class="meta">Rol concedido: ${esc(ROL_TXT[p.rolConcedido]||p.rolConcedido)}</div></div><span class="chip c-ok">${esc(p.estado)}</span></li>`).join('');
+  const firmas=(f.firmasConvenio||[]).map(x=>`<li class="cal-row"><div><b>${esc(x.cargo)}</b> · ${esc(x.ano)}<div class="meta">${esc(x.firmadoAt?new Date(x.firmadoAt).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}):'')}</div></div><a class="csv-code" href="/verificar?csv=${encodeURIComponent(x.csv||'')}" target="_blank" rel="noopener">${esc(x.csv||'')}</a></li>`).join('');
+  const des=(f.descansos||[]).map(d=>`<li class="cal-row"><span>${esc(calFecha(d.fecha))}</span><span class="chip ${d.estado==='aprobada'?'c-ok':d.estado==='pendiente'?'c-wait':'c-mut'}">${esc(d.estado)}</span></li>`).join('');
+  box.innerHTML=`<button class="btn sec sm" type="button" data-arc-back="1" style="margin-bottom:12px">← Volver al archivo</button>
+  <article class="panel"><h2>${esc(f.nombre)}</h2><div class="meta">DIP ${esc(f.dip)}</div>
+    <h3>Plazas</h3>${chips?`<ul class="cal-list">${chips}</ul>`:'<p class="meta">Sin plazas adjudicadas.</p>'}
+    <h3>Firmas del convenio</h3>${firmas?`<ul class="cal-list">${firmas}</ul>`:'<p class="meta">Sin firmas registradas.</p>'}
+    <h3>Convenio general aceptado</h3><p class="meta">${f.convenioAceptado?`Versión ${esc(f.convenioAceptado.version||'—')} · ${esc(f.convenioAceptado.fecha?new Date(f.convenioAceptado.fecha).toLocaleDateString('es-ES'):'')}`:'No consta aceptación.'}</p>
+    <h3>Días individuales</h3>${des?`<ul class="cal-list">${des}</ul>`:'<p class="meta">Sin solicitudes.</p>'}
+    <h3>Actividades aceptadas</h3><p class="meta">${(f.actividades||[]).length?f.actividades.map(a=>esc(calFecha(a.fecha))).join(' · '):'Ninguna.'}</p>
+  </article>`;
+}
+document.addEventListener('input',e=>{
+  if(e.target.id!=='arc-q')return;
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('#arc-body tr[data-q]').forEach(tr=>{tr.hidden=q&&!tr.dataset.q.includes(q)});
+});
+document.addEventListener('click',e=>{
+  const dipBtn=e.target.closest('[data-arc-dip]');
+  if(dipBtn){void loadArchivo(dipBtn.dataset.arcDip);return}
+  if(e.target.closest('[data-arc-back]')){void loadArchivo();}
+});
+
 /* ---- Importar pruebas en JSON (p. ej. generadas con IA) ---- */
 const PROMPT_IA='Genera una prueba de acceso para el ámbito «ÁMBITO» del Grupo de La Placeta. Devuelve SOLO JSON con este formato: {"preguntas":[{"tipo":"opciones","texto":"…","opciones":["A","B","C"],"correcta":1},{"tipo":"verdadero_falso","texto":"…","correcta":true},{"tipo":"texto","texto":"…","correcta":"respuesta corta"}]}. En "opciones", "correcta" es el número de la opción (empezando en 1).';
 const PREDEF={
@@ -1692,6 +1741,7 @@ function rGest(){
     <input type="text" id="g-t" placeholder="Título (p. ej. Administrativo/a 2027)" value="${esc(e?.titulo)}">
     <div class="g2"><input type="text" id="g-ar" placeholder="Área" value="${esc(e?.area)}" style="margin-bottom:8px"><input type="text" id="g-p" placeholder="Proyecto" value="${esc(e?.proyecto)}"><input type="number" id="g-n" min="1" placeholder="Nº de plazas" value="${e?.plazas||''}"></div>
     <div><label for="g-c">Fecha de cierre</label><input type="date" id="g-c" value="${esc(e?.cierre)}"></div>
+    <div><label for="g-rol">Rol que concede la plaza</label><select id="g-rol">${[['colaborador','Colaborador/a'],['direccion','Dirección de departamento'],['secretaria','Secretaría'],['vicepresidencia','Vicepresidencia'],['administracion','Administración']].map(([v,l])=>`<option value="${v}"${(e?.rolConcedido||'colaborador')===v?' selected':''}>${l}</option>`).join('')}</select><p class="meta" style="margin:4px 0 0">Quien obtenga plaza recibe este rol además del de aspirante. Puede tener varios a la vez.</p></div>
     <div><label for="g-pen">Penalización por invalidación (puntos que resta en la selección)</label><input type="number" id="g-pen" min="0" step="0.5" value="${e?.penaliza??1}"></div>
     <div><label for="g-r">Requisitos (uno por línea)</label><textarea id="g-r" rows="3">${esc((e?.requisitos||[]).join('\n'))}</textarea></div>
     <div><label for="g-a">Ámbitos de las pruebas (uno por línea)</label><textarea id="g-a" rows="3">${esc((e?.ambitos||[]).map(a=>a.nombre).join('\n'))}</textarea></div>
@@ -1716,7 +1766,7 @@ async function adminAct(act,id,a){
   if(act==='gsave'){const t=val('g-t').trim(),n=parseInt(val('g-n'))||0;if(!t||n<1)return toast('Indica título y número de plazas');
     const amb=lines(val('g-a')).map(x=>({id:slug(x),nombre:x}));if(!amb.length)return toast('Añade al menos un ámbito');
     const prev=edit&&conv(edit),cid=edit||'c'+Date.now().toString(36);
-    await w(()=>db.doc('convocatorias/'+cid).set({titulo:t,area:val('g-ar').trim(),proyecto:val('g-p').trim(),plazas:n,cierre:val('g-c'),penaliza:Math.max(0,parseFloat(val('g-pen'))||0),requisitos:lines(val('g-r')),ambitos:amb,estado:prev?.estado||'abierta',creada:prev?.creada||now}),'Convocatoria guardada');edit=null;render()}
+    await w(()=>db.doc('convocatorias/'+cid).set({titulo:t,area:val('g-ar').trim(),proyecto:val('g-p').trim(),plazas:n,cierre:val('g-c'),rolConcedido:val('g-rol')||'colaborador',penaliza:Math.max(0,parseFloat(val('g-pen'))||0),requisitos:lines(val('g-r')),ambitos:amb,estado:prev?.estado||'abierta',creada:prev?.creada||now}),'Convocatoria guardada');edit=null;render()}
   else if(act==='gedit'){edit=id;render();scrollTo(0,0)}
   else if(act==='gcancel'){edit=null;render()}
   else if(act==='gtoggle'){const c=conv(id);w(()=>db.doc('convocatorias/'+id).update({estado:c.estado==='abierta'?'cerrada':'abierta'}))}
@@ -1918,8 +1968,8 @@ function createApiAdapter(profile){
 function createApiUser(profile){
   return {
     id:async()=>profile.id,
-    canEdit:async()=>profile.role==='administracion'||profile.role==='presidencia',
-    isOwner:async()=>profile.role==='presidencia',
+    canEdit:async()=>(profile.roles||[profile.role]).some(r=>r==='administracion'||r==='presidencia'),
+    isOwner:async()=>(profile.roles||[profile.role]).includes('presidencia'),
     profiles:async ids=>Object.fromEntries(ids.map(id=>[id,{name:id===profile.id?profile.name:'Aspirante'}]))
   };
 }
@@ -1973,7 +2023,7 @@ async function logoutPlacetaid(){
   if(!window.claude?.use){
     const sessionLabel=document.createElement('span');
     sessionLabel.className='session-user';
-    sessionLabel.textContent=`Sesión: ${uid}`;
+    sessionLabel.textContent=`Sesión: ••••${String(uid).slice(-5)}`;
     $('#navUser').appendChild(sessionLabel);
     const logoutButton=document.createElement('button');
     logoutButton.type='button';

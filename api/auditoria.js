@@ -1,7 +1,7 @@
 // Registro de auditoría para presidencia. Solo lectura, con datos enmascarados.
 // GET /api/auditoria?limite=100
 import { requireUser, sendAuthError, serverSupabase } from './_supabase.js';
-import { isPresidentRole } from './_roles.js';
+import { isPresidentRole, rolesOf } from './_roles.js';
 import { shapeRows } from './_auditoria.js';
 
 export default async function handler(req, res) {
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   try {
     const { sb, user } = await requireUser(req);
-    if (!isPresidentRole(user.role)) return res.status(403).json({ error: 'forbidden' });
+    if (!isPresidentRole(rolesOf(user))) return res.status(403).json({ error: 'forbidden' });
 
     const limite = Math.min(200, Math.max(1, Number(req.query.limite) || 100));
     const { data: entries, error } = await sb.from('nexe_audit_log')
